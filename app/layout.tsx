@@ -21,10 +21,10 @@ async function loadSettings(): Promise<PublicSiteSettings> {
     await connectDB();
   } catch {
     return {
-      contactEmail: "preppfirdaus@gmail.com",
-      whatsappNumber: "918800620321",
+      contactEmail: "365prepp@gmail.com",
+      whatsappNumber: "919441343880",
       phoneNumber: "+91 88006 20321",
-      officeAddress: "MC.015.0075, Lalu Kirana Gali, Munger, Bihar 811201, India",
+      officeAddress: "MC.015.0075, Munger, Bihar - 811201, India",
       mockTestTiers: [],
     };
   }

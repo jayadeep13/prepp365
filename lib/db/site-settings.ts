@@ -13,10 +13,10 @@ export type PublicSiteSettings = {
 // Real contact details, used until the DB has a settings doc (or when the DB
 // isn't reachable) — editable anytime from /admin/settings once the DB is live.
 const empty: PublicSiteSettings = {
-  contactEmail: "preppfirdaus@gmail.com",
-  whatsappNumber: "918800620321",
+  contactEmail: "365prepp@gmail.com",
+  whatsappNumber: "919441343880",
   phoneNumber: "+91 88006 20321",
-  officeAddress: "MC.015.0075, Lalu Kirana Gali, Munger, Bihar 811201, India",
+  officeAddress: "MC.015.0075, Munger, Bihar - 811201, India",
   mockTestTiers: [],
 };
 

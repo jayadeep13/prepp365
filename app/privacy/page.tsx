@@ -12,7 +12,7 @@ async function loadSettings() {
   try {
     await connectDB();
   } catch {
-    return { contactEmail: "preppfirdaus@gmail.com" };
+    return { contactEmail: "365prepp@gmail.com" };
   }
   const s = await getSiteSettings();
   return { contactEmail: s.contactEmail };
