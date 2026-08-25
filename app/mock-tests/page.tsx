@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Timer, ClipboardList, Layers, ArrowRight } from "lucide-react";
 import { connectDB } from "@/lib/db/connect";
 import { MockTestModel } from "@/models/MockTest";
+import "@/models/Category";
 import { Badge } from "@/components/ui/badge";
 
 type TestRow = {

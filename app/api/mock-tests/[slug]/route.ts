@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/connect";
 import { MockTestModel } from "@/models/MockTest";
+import "@/models/Category";
 import { getSession } from "@/lib/auth/session";
 import { hasMockTestAccess } from "@/lib/auth/has-mocktest-access";
 

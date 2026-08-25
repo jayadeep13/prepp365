@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { connectDB } from "@/lib/db/connect";
 import { MockTestModel } from "@/models/MockTest";
+import "@/models/Category";
 import { requireRole } from "@/lib/auth/session";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

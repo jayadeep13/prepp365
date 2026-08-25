@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/connect";
 import { CourseModel } from "@/models/Course";
+import { CategoryModel } from "@/models/Category";
 
 export async function GET(req: NextRequest) {
   const category = req.nextUrl.searchParams.get("category");
@@ -17,7 +18,6 @@ export async function GET(req: NextRequest) {
 
   const filter: Record<string, unknown> = { isPublished: true };
   if (category) {
-    const { CategoryModel } = await import("@/models/Category");
     const cat = await CategoryModel.findOne({ slug: category });
     if (!cat) return NextResponse.json({ courses: [] });
     filter.category = cat._id;

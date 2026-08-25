@@ -13,6 +13,7 @@ import { CourseCard } from "@/components/course-card";
 import { formatINR } from "@/lib/utils";
 import { connectDB } from "@/lib/db/connect";
 import { CourseModel } from "@/models/Course";
+import "@/models/Category";
 import { getSession } from "@/lib/auth/session";
 import { hasPurchased } from "@/lib/auth/has-purchased";
 import { getPublishedCourses } from "@/lib/db/public-courses";
