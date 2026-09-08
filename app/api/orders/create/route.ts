@@ -8,6 +8,7 @@ import { UserModel } from "@/models/User";
 import { SiteSettingsModel } from "@/models/SiteSettings";
 import { getSession } from "@/lib/auth/session";
 import { createRazorpayOrder, getRazorpayKeyId } from "@/lib/razorpay";
+import { createAirpayCheckout } from "@/lib/airpay";
 import { resolveTier } from "@/lib/pricing";
 
 const bodySchema = z.object({
@@ -15,6 +16,7 @@ const bodySchema = z.object({
   courseSlug: z.string().optional(),
   months: z.number().int().positive(),
   couponCode: z.string().optional(),
+  gateway: z.enum(["razorpay", "airpay"]).default("airpay"),
 });
 
 export async function POST(req: NextRequest) {
@@ -100,7 +102,40 @@ export async function POST(req: NextRequest) {
     amount,
     couponCode,
     status: "created",
+    gateway: parsed.gateway,
   });
+
+  if (parsed.gateway === "airpay") {
+    try {
+      const [firstName, ...rest] = session.name.trim().split(/\s+/);
+      const checkout = createAirpayCheckout({
+        orderId: order._id.toString(),
+        amountRupees: amount,
+        buyerEmail: session.email ?? "",
+        buyerPhone: buyer.phone!,
+        buyerFirstName: firstName,
+        buyerLastName: rest.join(" ") || firstName,
+        buyerAddress: buyer.address,
+      });
+
+      return NextResponse.json({
+        orderId: order._id.toString(),
+        gateway: "airpay",
+        actionUrl: checkout.actionUrl,
+        fields: checkout.fields,
+        courseTitle: title,
+      });
+    } catch (err) {
+      console.error("Airpay checkout creation failed:", err);
+      return NextResponse.json(
+        {
+          error:
+            "Payments aren't configured yet. Set the AIRPAY_* variables in .env.local — see .env.example.",
+        },
+        { status: 503 }
+      );
+    }
+  }
 
   try {
     const rpOrder = await createRazorpayOrder(amount * 100, order._id.toString());
@@ -109,6 +144,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       orderId: order._id.toString(),
+      gateway: "razorpay",
       razorpayOrderId: rpOrder.id,
       amount: rpOrder.amount,
       currency: rpOrder.currency,

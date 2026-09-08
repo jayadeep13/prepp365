@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { openRazorpayCheckout } from "@/lib/razorpay-client";
+import { submitToAirpay } from "@/lib/airpay-client";
 import { useSession } from "@/lib/auth/use-session";
 
 export function useCheckout({
@@ -44,6 +45,12 @@ export function useCheckout({
           return;
         }
         throw new Error(data.error);
+      }
+
+      if (data.gateway === "airpay") {
+        // Full-page redirect to Airpay's hosted checkout; the browser navigates away here.
+        submitToAirpay(data.actionUrl, data.fields);
+        return;
       }
 
       await openRazorpayCheckout({

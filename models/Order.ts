@@ -13,9 +13,11 @@ const orderSchema = new Schema(
       enum: ["created", "paid", "failed", "refunded"],
       default: "created",
     },
+    gateway: { type: String, enum: ["razorpay", "airpay"], default: "razorpay", required: true },
     razorpayOrderId: { type: String },
     razorpayPaymentId: { type: String },
     razorpaySignature: { type: String },
+    airpayTransactionId: { type: String },
   },
   { timestamps: true }
 );

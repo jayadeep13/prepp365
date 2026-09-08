@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { connectDB } from "@/lib/db/connect";
 import { UserModel } from "@/models/User";
 import { getSession } from "@/lib/auth/session";
+import { PaymentStatusBanner } from "@/components/dashboard/payment-status-banner";
 
 type PopulatedCourse = {
   slug: string;
@@ -31,6 +33,9 @@ export default async function MyCoursesPage() {
 
   return (
     <div>
+      <Suspense fallback={null}>
+        <PaymentStatusBanner />
+      </Suspense>
       <h1 className="font-display text-2xl font-bold text-ink">My Courses</h1>
       <p className="mt-1 text-sm text-ink-soft">Everything you've enrolled in, in one place.</p>
 
