@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     await connectDB();
   } catch {
     return NextResponse.json(
-      { error: "Database not connected yet. Set MONGODB_URI in .env.local, then run `npm run seed`." },
+      { error: "We're having trouble connecting right now. Please try again in a moment." },
       { status: 503 }
     );
   }
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     const course = await CourseModel.findOne({ slug: parsed.courseSlug, isPublished: true });
     if (!course) {
       return NextResponse.json(
-        { error: "Course not found in the database yet. Run `npm run seed` to load the sample courses." },
+        { error: "That course isn't available right now." },
         { status: 404 }
       );
     }

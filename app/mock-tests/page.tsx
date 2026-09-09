@@ -59,9 +59,7 @@ export default async function MockTestsPage() {
       {tests.length === 0 ? (
         <div className="mt-10 rounded-card border border-dashed border-surface-line p-12 text-center">
           <p className="font-display font-semibold text-ink">No mock tests published yet</p>
-          <p className="text-sm text-ink-faint mt-1">
-            Connect MongoDB and run <code className="font-mono">npm run seed</code> to load the sample tests.
-          </p>
+          <p className="text-sm text-ink-faint mt-1">Check back soon — new tests are added regularly.</p>
         </div>
       ) : (
         <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
