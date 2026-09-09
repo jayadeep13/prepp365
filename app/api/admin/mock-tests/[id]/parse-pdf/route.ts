@@ -27,14 +27,7 @@ export async function POST(req: NextRequest) {
     text = result.text;
   } catch (err) {
     console.error("PDF parsing failed:", err);
-    // TEMPORARY — debugging a production-only failure, remove `debug` once diagnosed.
-    return NextResponse.json(
-      {
-        error: "Could not read that PDF. Make sure it's a text-based PDF, not a scanned image.",
-        debug: err instanceof Error ? { message: err.message, name: err.name, stack: err.stack } : String(err),
-      },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Could not read that PDF. Make sure it's a text-based PDF, not a scanned image." }, { status: 400 });
   }
 
   const { questions, errors } = parseMockTestText(text);
