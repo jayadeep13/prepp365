@@ -17,12 +17,20 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Database not connected." }, { status: 503 });
   }
 
-  const test = await MockTestModel.findById(id).populate("category", "name slug").lean();
+  let test;
+  try {
+    test = await MockTestModel.findById(id).populate("category", "name slug").lean();
+  } catch {
+    return NextResponse.json({ error: "Test not found" }, { status: 404 });
+  }
   if (!test) return NextResponse.json({ error: "Test not found" }, { status: 404 });
   return NextResponse.json({ test });
 }
 
 const questionSchema = z.object({
+  // Preserved for existing questions so re-saving doesn't mint new subdocument ids —
+  // those ids are what attempt answers and scoring are matched against. Omitted for new questions.
+  _id: z.string().optional(),
   text: z.string().min(1),
   options: z.array(z.string().min(1)).min(2),
   correctIndex: z.number().int().min(0),
@@ -63,7 +71,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Database not connected." }, { status: 503 });
   }
 
-  const test = await MockTestModel.findByIdAndUpdate(id, { $set: parsed }, { new: true }).lean();
+  let test;
+  try {
+    test = await MockTestModel.findByIdAndUpdate(id, { $set: parsed }, { new: true }).lean();
+  } catch {
+    return NextResponse.json({ error: "Test not found" }, { status: 404 });
+  }
   if (!test) return NextResponse.json({ error: "Test not found" }, { status: 404 });
   return NextResponse.json({ test });
 }
@@ -80,6 +93,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "Database not connected." }, { status: 503 });
   }
 
-  await MockTestModel.findByIdAndDelete(id);
+  try {
+    await MockTestModel.findByIdAndDelete(id);
+  } catch {
+    return NextResponse.json({ error: "Test not found" }, { status: 404 });
+  }
   return NextResponse.json({ ok: true });
 }

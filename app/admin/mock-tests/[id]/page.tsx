@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { CloudinaryUploader } from "@/components/admin/cloudinary-uploader";
 import { MOCK_TEST_TEMPLATE } from "@/lib/mocktest-pdf-parser";
 
-type Question = { text: string; options: string[]; correctIndex: number; marks: number };
+type Question = { _id?: string; text: string; options: string[]; correctIndex: number; marks: number };
 type TestData = {
   _id: string;
   title: string;
@@ -36,14 +36,18 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
 
   function load() {
     fetch(`/api/admin/mock-tests/${id}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+      })
       .then((data) => {
         if (data.test) {
           setTest(data.test);
           setDetailsForm(data.test);
           setQuestions(data.test.questions ?? []);
         }
-      });
+      })
+      .catch(() => setError("Couldn't load this test. It may have been deleted."));
   }
   useEffect(load, [id]);
 
@@ -51,8 +55,9 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
     e.preventDefault();
     if (!detailsForm) return;
     setSavingDetails(true);
+    setError(null);
     try {
-      await fetch(`/api/admin/mock-tests/${id}`, {
+      const res = await fetch(`/api/admin/mock-tests/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -63,7 +68,11 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
           negativeMarking: Number(detailsForm.negativeMarking),
         }),
       });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not save details");
       load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save details");
     } finally {
       setSavingDetails(false);
     }
@@ -120,12 +129,16 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
       prev.map((q, i) => {
         if (i !== qIndex) return q;
         const options = q.options.filter((_, oi) => oi !== optIndex);
-        const correctIndex = q.correctIndex >= options.length ? 0 : q.correctIndex > optIndex ? q.correctIndex - 1 : q.correctIndex;
+        // Removing the option that was marked correct must reset to an explicit choice —
+        // never silently let a different option inherit "correct" just because it shifted into that slot.
+        const correctIndex =
+          q.correctIndex === optIndex ? 0 : q.correctIndex > optIndex ? q.correctIndex - 1 : q.correctIndex;
         return { ...q, options, correctIndex };
       })
     );
   }
   function removeQuestion(index: number) {
+    if (!confirm("Delete this question? This can't be undone.")) return;
     setQuestions((prev) => prev.filter((_, i) => i !== index));
   }
   function addQuestion() {
@@ -153,7 +166,18 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
     }
   }
 
-  if (!test || !detailsForm) return <div className="text-white/50 py-16 text-center">Loading…</div>;
+  if (!test || !detailsForm) {
+    return (
+      <div className="text-white/50 py-16 text-center">
+        {error ?? "Loading…"}
+        {error && (
+          <div className="mt-3">
+            <Link href="/admin/mock-tests" className="text-sm font-semibold text-purple-400">← All mock tests</Link>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div>
