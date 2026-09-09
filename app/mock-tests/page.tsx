@@ -5,6 +5,10 @@ import { MockTestModel } from "@/models/MockTest";
 import "@/models/Category";
 import { Badge } from "@/components/ui/badge";
 
+// No cookie/session access on this page, so Next.js would otherwise statically
+// pre-render it at build time and never notice a test being published later.
+export const dynamic = "force-dynamic";
+
 type TestRow = {
   slug: string;
   title: string;
