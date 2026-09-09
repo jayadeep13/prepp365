@@ -38,7 +38,8 @@ export default function MockTestResultPage({
         } else {
           setError(data.error ?? "Could not load your result.");
         }
-      });
+      })
+      .catch(() => setError("Couldn't load your result. Check your connection and try again."));
   }, [attemptId]);
 
   if (error) {

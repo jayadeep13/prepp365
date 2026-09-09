@@ -6,6 +6,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
   signInWithPhoneNumber,
+  sendPasswordResetEmail,
   RecaptchaVerifier,
   signOut,
   type ConfirmationResult,
@@ -53,6 +54,20 @@ export async function signInWithPassword(email: string, password: string) {
   const cred = await signInWithEmailAndPassword(auth, email, password);
   const idToken = await cred.user.getIdToken();
   return establishSession(idToken);
+}
+
+/**
+ * Sends a password-reset email. Swallows "user not found" so the UI can show
+ * the same message either way, instead of confirming whether an email is registered.
+ */
+export async function sendPasswordReset(email: string) {
+  const auth = requireAuth();
+  try {
+    await sendPasswordResetEmail(auth, email);
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("auth/user-not-found")) return;
+    throw err;
+  }
 }
 
 export async function registerWithPassword(

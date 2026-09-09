@@ -45,7 +45,8 @@ export default function MockTestAttemptPage({ params }: { params: Promise<{ slug
           setError(data.error ?? "Could not load this test.");
           setNoAccess(data.code === "NO_ACCESS");
         }
-      });
+      })
+      .catch(() => setError("Couldn't load this test. Check your connection and try again."));
   }, [slug, session, sessionLoading, router]);
 
   const handleSubmit = useCallback(async () => {

@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { GraduationCap, ArrowRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { signInWithPassword } from "@/lib/auth/client-actions";
+import { signInWithPassword, sendPasswordReset } from "@/lib/auth/client-actions";
 import { friendlyAuthError } from "@/lib/auth/friendly-error";
 
 function LoginContent() {
@@ -18,6 +18,8 @@ function LoginContent() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetStatus, setResetStatus] = useState<{ kind: "error" | "success"; text: string } | null>(null);
+  const [resetLoading, setResetLoading] = useState(false);
 
   async function handlePasswordLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -30,6 +32,23 @@ function LoginContent() {
       setError(friendlyAuthError(err));
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleForgotPassword() {
+    setResetStatus(null);
+    if (!email.trim()) {
+      setResetStatus({ kind: "error", text: "Enter your email above first, then click \"Forgot password?\" again." });
+      return;
+    }
+    setResetLoading(true);
+    try {
+      await sendPasswordReset(email.trim());
+      setResetStatus({ kind: "success", text: `If an account exists for ${email.trim()}, we've sent a password reset link to it.` });
+    } catch (err) {
+      setResetStatus({ kind: "error", text: friendlyAuthError(err) });
+    } finally {
+      setResetLoading(false);
     }
   }
 
@@ -97,8 +116,20 @@ function LoginContent() {
                 />
               </div>
               <div className="mt-1.5 text-right">
-                <Link href="#" className="text-xs font-semibold text-purple-600">Forgot password?</Link>
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={resetLoading}
+                  className="text-xs font-semibold text-purple-600 disabled:opacity-50"
+                >
+                  {resetLoading ? "Sending…" : "Forgot password?"}
+                </button>
               </div>
+              {resetStatus && (
+                <p className={`mt-1.5 text-xs ${resetStatus.kind === "success" ? "text-green-600" : "text-red-600"}`}>
+                  {resetStatus.text}
+                </p>
+              )}
             </div>
             <Button type="submit" variant="primary" size="lg" className="w-full group h-14 text-base" disabled={loading}>
               {loading ? "Logging in…" : "Log in"}

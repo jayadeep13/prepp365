@@ -11,12 +11,17 @@ type PurchasedCourse = { _id: string; title: string };
 export default function DashboardChatPage() {
   const { session } = useSession();
   const [courses, setCourses] = useState<PurchasedCourse[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [tab, setTab] = useState<"class" | "support">("class");
 
   useEffect(() => {
     fetch("/api/dashboard/my-courses")
-      .then((res) => res.json())
-      .then((data) => setCourses(data.purchasedCourses ?? []));
+      .then((res) => {
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+      })
+      .then((data) => setCourses(data.purchasedCourses ?? []))
+      .catch(() => setLoadError(true));
   }, []);
 
   return (
@@ -24,7 +29,17 @@ export default function DashboardChatPage() {
       <h1 className="font-display text-2xl font-bold text-ink">Chat</h1>
       <p className="mt-1 text-sm text-ink-soft">Talk with classmates or ask Firdaus a question directly.</p>
 
-      {courses === null || !session ? (
+      {loadError ? (
+        <div className="mt-8 rounded-card border border-dashed border-red-200 bg-red-50 p-10 text-center">
+          <p className="text-sm text-red-700">Couldn't load your courses. Check your connection and try again.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="inline-block mt-3 text-sm font-semibold text-purple-600"
+          >
+            Retry
+          </button>
+        </div>
+      ) : courses === null || !session ? (
         <p className="mt-8 text-sm text-ink-faint">Loading…</p>
       ) : courses.length === 0 ? (
         <div className="mt-8 rounded-card border border-dashed border-surface-line p-10 text-center">
