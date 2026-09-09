@@ -8,7 +8,7 @@ import { faqs } from "@/lib/data";
 import { Rating } from "@/components/ui/rating";
 import { NoDownloadVideo } from "@/components/sections/no-download-video";
 
-export type CourseMaterial = { _id: string; title: string; fileUrl: string };
+export type CourseMaterial = { _id: string; title: string; fileUrl?: string; isFreePreview?: boolean };
 export type CourseTestimonial = { _id: string; name: string; quote: string; examResult?: string };
 
 export type CurriculumLesson = {
@@ -143,30 +143,42 @@ export function CourseDetailTabs({
           ))}
 
         {tab === "Materials" && (
-          !isPurchased ? (
-            <div className="rounded-card border border-dashed border-surface-line p-10 text-center">
-              <Lock size={20} className="mx-auto text-ink-faint" />
-              <p className="mt-3 text-sm text-ink-faint">Enroll in this course to unlock PDFs and materials.</p>
-            </div>
-          ) : !materials || materials.length === 0 ? (
+          !materials || materials.length === 0 ? (
             <div className="rounded-card border border-dashed border-surface-line p-10 text-center">
               <p className="text-sm text-ink-faint">No materials uploaded yet.</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {materials.map((m) => (
-                <a
-                  key={m._id}
-                  href={m.fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 rounded-card border border-surface-line p-4 hover:bg-surface-tint transition-colors"
-                >
-                  <FileText size={18} className="text-purple-500 shrink-0" />
-                  <span className="text-sm text-ink flex-1">{m.title}</span>
-                  <Download size={15} className="text-ink-faint" />
-                </a>
-              ))}
+              {materials.map((m) => {
+                const unlocked = isPurchased || m.isFreePreview;
+                return unlocked ? (
+                  <a
+                    key={m._id}
+                    href={m.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 rounded-card border border-surface-line p-4 hover:bg-surface-tint transition-colors"
+                  >
+                    <FileText size={18} className="text-purple-500 shrink-0" />
+                    <span className="text-sm text-ink flex-1">{m.title}</span>
+                    {m.isFreePreview && !isPurchased && (
+                      <span className="text-xs font-semibold text-green-600 shrink-0">Free</span>
+                    )}
+                    <Download size={15} className="text-ink-faint" />
+                  </a>
+                ) : (
+                  <div key={m._id} className="flex items-center gap-3 rounded-card border border-dashed border-surface-line p-4 opacity-70">
+                    <FileText size={18} className="text-ink-faint shrink-0" />
+                    <span className="text-sm text-ink-faint flex-1">{m.title}</span>
+                    <Lock size={15} className="text-ink-faint" />
+                  </div>
+                );
+              })}
+              {!isPurchased && (
+                <Link href={`/courses/${courseSlug}#purchase`} className="block text-center text-sm font-semibold text-purple-600 pt-1">
+                  Enroll to unlock all materials →
+                </Link>
+              )}
             </div>
           )
         )}

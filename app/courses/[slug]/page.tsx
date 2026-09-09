@@ -6,7 +6,7 @@ import { Clock, Languages, Users } from "lucide-react";
 import { Rating } from "@/components/ui/rating";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { CourseDetailTabs, type CurriculumChapter, type CourseMaterial } from "@/components/course-detail-tabs";
+import { CourseDetailTabs, type CurriculumChapter } from "@/components/course-detail-tabs";
 import { getPublishedTestimonials } from "@/lib/db/public-testimonials";
 import { CheckoutButton } from "@/components/checkout-button";
 import { CourseCard } from "@/components/course-card";
@@ -44,6 +44,7 @@ type RawCurriculumLesson = {
   videoUrl?: string;
 };
 type RawCurriculumChapter = { _id: string; title: string; lessons: RawCurriculumLesson[] };
+type RawMaterial = { _id: string; title: string; fileUrl: string; isFreePreview?: boolean };
 
 type MongoCourse = {
   _id: string;
@@ -65,7 +66,7 @@ type MongoCourse = {
   isNew?: boolean;
   introVideoUrl?: string;
   curriculum?: RawCurriculumChapter[];
-  materials?: CourseMaterial[];
+  materials?: RawMaterial[];
   category: { _id: string; slug: string; name: string };
 };
 
@@ -106,6 +107,13 @@ export default async function CourseDetailsPage({ params }: { params: Promise<{ 
       isFreePreview: l.isFreePreview,
       videoUrl: l.isFreePreview || isPurchased ? l.videoUrl : undefined,
     })),
+  }));
+  // Only hand the file URL to the client for materials the viewer is actually allowed to open.
+  const sanitizedMaterials = (course.materials ?? []).map((m) => ({
+    _id: m._id,
+    title: m.title,
+    isFreePreview: m.isFreePreview,
+    fileUrl: m.isFreePreview || isPurchased ? m.fileUrl : undefined,
   }));
   const firstLessonId = course.curriculum?.[0]?.lessons?.[0]?._id;
   const related = (await getPublishedCourses({ category: course.category._id }))
@@ -192,7 +200,7 @@ export default async function CourseDetailsPage({ params }: { params: Promise<{ 
           students={course.students ?? 0}
           curriculum={sanitizedCurriculum}
           introVideoUrl={course.introVideoUrl}
-          materials={course.materials ?? []}
+          materials={sanitizedMaterials}
           testimonials={testimonials}
           isPurchased={isPurchased}
         />

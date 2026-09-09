@@ -16,7 +16,7 @@ type Lesson = {
   pdfUrl?: string;
 };
 type Chapter = { _id: string; title: string; lessons: Lesson[] };
-type Material = { _id: string; title: string; fileUrl: string };
+type Material = { _id: string; title: string; fileUrl: string; isFreePreview?: boolean };
 type CourseData = {
   _id: string;
   title: string;
@@ -62,7 +62,7 @@ export default function AdminCourseManagePage({ params }: { params: Promise<{ id
   const [newChapterTitle, setNewChapterTitle] = useState("");
   const [lessonForm, setLessonForm] = useState(emptyLesson);
   const [lessonFormChapter, setLessonFormChapter] = useState<string | null>(null);
-  const [materialForm, setMaterialForm] = useState({ title: "", fileUrl: "", filePublicId: "" });
+  const [materialForm, setMaterialForm] = useState({ title: "", fileUrl: "", filePublicId: "", isFreePreview: false });
   const [highlightsText, setHighlightsText] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -210,7 +210,7 @@ export default function AdminCourseManagePage({ params }: { params: Promise<{ id
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not add material");
-      setMaterialForm({ title: "", fileUrl: "", filePublicId: "" });
+      setMaterialForm({ title: "", fileUrl: "", filePublicId: "", isFreePreview: false });
       load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not add material");
@@ -220,6 +220,15 @@ export default function AdminCourseManagePage({ params }: { params: Promise<{ id
   async function deleteMaterial(materialId: string) {
     if (!confirm("Remove this material? The uploaded file will also be deleted from storage.")) return;
     await fetch(`/api/admin/courses/${id}/materials/${materialId}`, { method: "DELETE" });
+    load();
+  }
+
+  async function toggleMaterialFreePreview(materialId: string, current: boolean) {
+    await fetch(`/api/admin/courses/${id}/materials/${materialId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isFreePreview: !current }),
+    });
     load();
   }
 
@@ -478,6 +487,18 @@ export default function AdminCourseManagePage({ params }: { params: Promise<{ id
               <li key={m._id} className="flex items-center gap-3 px-5 py-3">
                 <FileText size={16} className="text-purple-400 shrink-0" />
                 <span className="flex-1 text-sm text-white/90">{m.title}</span>
+                <button
+                  onClick={() => toggleMaterialFreePreview(m._id, Boolean(m.isFreePreview))}
+                  title="Click to toggle free preview / paid"
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${
+                    m.isFreePreview
+                      ? "bg-green-500/15 text-green-400 hover:bg-green-500/25"
+                      : "bg-white/10 text-white/50 hover:bg-white/20"
+                  }`}
+                >
+                  {m.isFreePreview ? <Unlock size={12} /> : <Lock size={12} />}
+                  {m.isFreePreview ? "Free" : "Paid"}
+                </button>
                 <button onClick={() => deleteMaterial(m._id)} className="text-red-400 hover:text-red-300">
                   <Trash2 size={14} />
                 </button>
@@ -502,6 +523,14 @@ export default function AdminCourseManagePage({ params }: { params: Promise<{ id
               label={materialForm.fileUrl ? "Replace file" : "Upload PDF"}
               onUploaded={(r) => setMaterialForm((f) => ({ ...f, fileUrl: r.secureUrl, filePublicId: r.publicId }))}
             />
+            <label className="flex items-center gap-2 text-sm text-white/70">
+              <input
+                type="checkbox"
+                checked={materialForm.isFreePreview}
+                onChange={(e) => setMaterialForm({ ...materialForm, isFreePreview: e.target.checked })}
+              />
+              Free preview
+            </label>
             <div className="sm:col-span-2">
               <Button type="submit" size="sm">Add material</Button>
             </div>

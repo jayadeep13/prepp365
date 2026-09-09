@@ -27,6 +27,7 @@ const materialSchema = new Schema(
     title: { type: String, required: true },
     fileUrl: { type: String, required: true },
     filePublicId: { type: String },
+    isFreePreview: { type: Boolean, default: false },
     uploadedAt: { type: Date, default: Date.now },
   },
   { _id: true }

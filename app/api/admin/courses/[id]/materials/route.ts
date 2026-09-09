@@ -8,6 +8,7 @@ const bodySchema = z.object({
   title: z.string().min(1),
   fileUrl: z.string().url(),
   filePublicId: z.string().optional(),
+  isFreePreview: z.boolean().optional(),
 });
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -30,7 +31,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const course = await CourseModel.findByIdAndUpdate(
     id,
-    { $push: { materials: { title: parsed.title, fileUrl: parsed.fileUrl, filePublicId: parsed.filePublicId } } },
+    {
+      $push: {
+        materials: {
+          title: parsed.title,
+          fileUrl: parsed.fileUrl,
+          filePublicId: parsed.filePublicId,
+          isFreePreview: parsed.isFreePreview ?? false,
+        },
+      },
+    },
     { new: true }
   ).lean();
 
