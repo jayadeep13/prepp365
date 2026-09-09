@@ -15,7 +15,12 @@ const nextConfig: NextConfig = {
     // platform-specific sibling package (e.g. @napi-rs/canvas-linux-x64-gnu on
     // Vercel's Linux build) — not inside @napi-rs/canvas itself — so both must
     // be covered, whichever platform package ends up installed at build time.
-    "/api/admin/mock-tests/[id]/parse-pdf": ["./node_modules/@napi-rs/canvas*/**"],
+    // pdfjs-dist also loads its worker script (pdf.worker.mjs) dynamically at
+    // runtime, which the automatic trace misses the same way.
+    "/api/admin/mock-tests/[id]/parse-pdf": [
+      "./node_modules/@napi-rs/canvas*/**",
+      "./node_modules/pdfjs-dist/**",
+    ],
   },
   images: {
     remotePatterns: [
