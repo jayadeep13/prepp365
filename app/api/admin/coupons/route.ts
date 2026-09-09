@@ -18,13 +18,18 @@ export async function GET() {
   return NextResponse.json({ coupons });
 }
 
-const bodySchema = z.object({
-  code: z.string().min(3).max(24),
-  discountType: z.enum(["percent", "flat"]),
-  value: z.number().positive(),
-  maxUses: z.number().positive().nullable().optional(),
-  expiresAt: z.string().nullable().optional(),
-});
+const bodySchema = z
+  .object({
+    code: z.string().min(3).max(24),
+    discountType: z.enum(["percent", "flat"]),
+    value: z.number().positive(),
+    maxUses: z.number().positive().nullable().optional(),
+    expiresAt: z.string().nullable().optional(),
+  })
+  .refine((data) => data.discountType !== "percent" || data.value <= 100, {
+    message: "A percent discount can't be more than 100.",
+    path: ["value"],
+  });
 
 export async function POST(req: NextRequest) {
   const check = await requireRole(["admin"]);

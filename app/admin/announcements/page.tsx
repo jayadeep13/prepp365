@@ -21,29 +21,44 @@ export default function AdminAnnouncementsPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   function load() {
     setLoading(true);
     fetch("/api/admin/announcements")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+      })
       .then((data) => setAnnouncements(data.announcements ?? []))
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }
 
   useEffect(load, []);
 
   async function togglePinned(id: string, pinned: boolean) {
-    await fetch(`/api/admin/announcements/${id}`, {
+    setError(null);
+    const res = await fetch(`/api/admin/announcements/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ pinned: !pinned }),
     });
+    if (!res.ok) {
+      setError("Could not update this announcement.");
+      return;
+    }
     load();
   }
 
   async function remove(id: string) {
     if (!confirm("Delete this announcement?")) return;
-    await fetch(`/api/admin/announcements/${id}`, { method: "DELETE" });
+    setError(null);
+    const res = await fetch(`/api/admin/announcements/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      setError("Could not delete this announcement.");
+      return;
+    }
     setAnnouncements((prev) => prev.filter((a) => a._id !== id));
   }
 
@@ -107,6 +122,9 @@ export default function AdminAnnouncementsPage() {
           </div>
         </form>
       )}
+
+      {!formOpen && error && <p className="mt-6 text-xs text-red-400">{error}</p>}
+      {loadError && <p className="mt-6 text-xs text-red-400">Couldn't load announcements. Check your connection and try again.</p>}
 
       <div className="mt-8 space-y-3">
         {announcements.map((a) => (

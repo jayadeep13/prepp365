@@ -84,7 +84,8 @@ export async function POST(req: NextRequest) {
   let couponCode: string | undefined;
   if (parsed.couponCode) {
     const coupon = await CouponModel.findOne({ code: parsed.couponCode.toUpperCase(), isActive: true });
-    if (coupon && (!coupon.expiresAt || coupon.expiresAt > new Date())) {
+    const withinUsageLimit = !coupon?.maxUses || (coupon.usedCount ?? 0) < coupon.maxUses;
+    if (coupon && withinUsageLimit && (!coupon.expiresAt || coupon.expiresAt > new Date())) {
       const discount =
         coupon.discountType === "percent"
           ? Math.round((amount * coupon.value) / 100)

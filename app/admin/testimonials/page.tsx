@@ -22,29 +22,44 @@ export default function AdminTestimonialsPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   function load() {
     setLoading(true);
     fetch("/api/admin/testimonials")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+      })
       .then((data) => setTestimonials(data.testimonials ?? []))
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }
 
   useEffect(load, []);
 
   async function togglePublish(id: string, isPublished: boolean) {
-    await fetch(`/api/admin/testimonials/${id}`, {
+    setError(null);
+    const res = await fetch(`/api/admin/testimonials/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isPublished: !isPublished }),
     });
+    if (!res.ok) {
+      setError("Could not update this testimonial.");
+      return;
+    }
     setTestimonials((prev) => prev.map((t) => (t._id === id ? { ...t, isPublished: !isPublished } : t)));
   }
 
   async function remove(id: string) {
     if (!confirm("Delete this testimonial?")) return;
-    await fetch(`/api/admin/testimonials/${id}`, { method: "DELETE" });
+    setError(null);
+    const res = await fetch(`/api/admin/testimonials/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      setError("Could not delete this testimonial.");
+      return;
+    }
     setTestimonials((prev) => prev.filter((t) => t._id !== id));
   }
 
@@ -111,6 +126,9 @@ export default function AdminTestimonialsPage() {
           </div>
         </form>
       )}
+
+      {!formOpen && error && <p className="mt-6 text-xs text-red-400">{error}</p>}
+      {loadError && <p className="mt-6 text-xs text-red-400">Couldn't load testimonials. Check your connection and try again.</p>}
 
       <div className="mt-8 overflow-x-auto rounded-card border border-white/10">
         <table className="w-full text-sm">

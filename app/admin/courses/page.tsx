@@ -42,12 +42,17 @@ export default function AdminCoursesPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   function load() {
     setLoading(true);
     fetch("/api/admin/courses")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+      })
       .then((data) => setCourses(data.courses ?? []))
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }
 
@@ -65,17 +70,29 @@ export default function AdminCoursesPage() {
   useEffect(loadCategories, []);
 
   async function togglePublish(id: string, isPublished: boolean) {
-    await fetch(`/api/admin/courses/${id}`, {
+    setError(null);
+    const res = await fetch(`/api/admin/courses/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isPublished: !isPublished }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || "Could not update this course.");
+      return;
+    }
     setCourses((prev) => prev.map((c) => (c._id === id ? { ...c, isPublished: !isPublished } : c)));
   }
 
   async function deleteCourse(id: string) {
     if (!confirm("Delete this course?")) return;
-    await fetch(`/api/admin/courses/${id}`, { method: "DELETE" });
+    setError(null);
+    const res = await fetch(`/api/admin/courses/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || "Could not delete this course.");
+      return;
+    }
     setCourses((prev) => prev.filter((c) => c._id !== id));
   }
 
@@ -175,6 +192,9 @@ export default function AdminCoursesPage() {
           </div>
         </form>
       )}
+
+      {!formOpen && error && <p className="mt-6 text-xs text-red-400">{error}</p>}
+      {loadError && <p className="mt-6 text-xs text-red-400">Couldn't load courses. Check your connection and try again.</p>}
 
       <div className="mt-8 overflow-x-auto rounded-card border border-white/10">
         <table className="w-full text-sm">

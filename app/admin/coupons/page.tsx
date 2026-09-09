@@ -24,29 +24,44 @@ export default function AdminCouponsPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   function load() {
     setLoading(true);
     fetch("/api/admin/coupons")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+      })
       .then((data) => setCoupons(data.coupons ?? []))
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }
 
   useEffect(load, []);
 
   async function toggleActive(id: string, isActive: boolean) {
-    await fetch(`/api/admin/coupons/${id}`, {
+    setError(null);
+    const res = await fetch(`/api/admin/coupons/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isActive: !isActive }),
     });
+    if (!res.ok) {
+      setError("Could not update this coupon.");
+      return;
+    }
     setCoupons((prev) => prev.map((c) => (c._id === id ? { ...c, isActive: !isActive } : c)));
   }
 
   async function remove(id: string) {
     if (!confirm("Delete this coupon?")) return;
-    await fetch(`/api/admin/coupons/${id}`, { method: "DELETE" });
+    setError(null);
+    const res = await fetch(`/api/admin/coupons/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      setError("Could not delete this coupon.");
+      return;
+    }
     setCoupons((prev) => prev.filter((c) => c._id !== id));
   }
 
@@ -105,8 +120,16 @@ export default function AdminCouponsPage() {
             </select>
           </div>
           <div>
-            <label className="text-xs font-semibold text-white/50 mb-1.5 block">Value</label>
-            <input required type="number" min={1} value={form.value} onChange={(e) => setForm({ ...form, value: Number(e.target.value) })} className={inputClass} />
+            <label className="text-xs font-semibold text-white/50 mb-1.5 block">Value{form.discountType === "percent" ? " (%)" : " (₹)"}</label>
+            <input
+              required
+              type="number"
+              min={1}
+              max={form.discountType === "percent" ? 100 : undefined}
+              value={form.value}
+              onChange={(e) => setForm({ ...form, value: Number(e.target.value) })}
+              className={inputClass}
+            />
           </div>
           <div>
             <label className="text-xs font-semibold text-white/50 mb-1.5 block">Max uses (optional)</label>
@@ -121,6 +144,9 @@ export default function AdminCouponsPage() {
           </div>
         </form>
       )}
+
+      {!formOpen && error && <p className="mt-6 text-xs text-red-400">{error}</p>}
+      {loadError && <p className="mt-6 text-xs text-red-400">Couldn't load coupons. Check your connection and try again.</p>}
 
       <div className="mt-8 overflow-x-auto rounded-card border border-white/10">
         <table className="w-full text-sm">

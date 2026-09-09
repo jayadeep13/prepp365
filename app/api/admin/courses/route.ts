@@ -19,19 +19,24 @@ export async function GET() {
   return NextResponse.json({ courses });
 }
 
-const bodySchema = z.object({
-  title: z.string().min(1),
-  slug: z.string().min(1),
-  examTag: z.string().min(1),
-  categorySlug: z.string().min(1),
-  thumbnail: z.string().url(),
-  description: z.string().min(1),
-  instructor: z.string().min(1),
-  price: z.number().nonnegative(),
-  mrp: z.number().nonnegative(),
-  duration: z.string().optional(),
-  language: z.string().optional(),
-});
+const bodySchema = z
+  .object({
+    title: z.string().min(1),
+    slug: z.string().min(1),
+    examTag: z.string().min(1),
+    categorySlug: z.string().min(1),
+    thumbnail: z.string().url(),
+    description: z.string().min(1),
+    instructor: z.string().min(1),
+    price: z.number().nonnegative(),
+    mrp: z.number().nonnegative(),
+    duration: z.string().optional(),
+    language: z.string().optional(),
+  })
+  .refine((data) => data.mrp === 0 || data.mrp >= data.price, {
+    message: "MRP can't be lower than the price.",
+    path: ["mrp"],
+  });
 
 export async function POST(req: NextRequest) {
   const check = await requireRole(["admin", "faculty"]);

@@ -68,14 +68,18 @@ export default function AdminCourseManagePage({ params }: { params: Promise<{ id
 
   function load() {
     fetch(`/api/faculty/courses/${id}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+      })
       .then((data) => {
         setCourse(data.course ?? null);
         if (data.course) {
           setDetailsForm(data.course);
           setHighlightsText((data.course.heroHighlights ?? []).join(", "));
         }
-      });
+      })
+      .catch(() => setError("Couldn't load this course. It may have been deleted."));
   }
   useEffect(load, [id]);
 
@@ -97,8 +101,9 @@ export default function AdminCourseManagePage({ params }: { params: Promise<{ id
     if (!detailsForm) return;
     setSavingDetails(true);
     setDetailsSaved(false);
+    setError(null);
     try {
-      await fetch(`/api/admin/courses/${id}`, {
+      const res = await fetch(`/api/admin/courses/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -124,7 +129,11 @@ export default function AdminCourseManagePage({ params }: { params: Promise<{ id
           language: detailsForm.language,
         }),
       });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not save course details");
       setDetailsSaved(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save course details");
     } finally {
       setSavingDetails(false);
     }

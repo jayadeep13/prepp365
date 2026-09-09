@@ -22,12 +22,17 @@ export default function AdminCategoriesPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   function load() {
     setLoading(true);
     fetch("/api/admin/categories")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+      })
       .then((data) => setCategories(data.categories ?? []))
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }
 
@@ -110,6 +115,8 @@ export default function AdminCategoriesPage() {
           </div>
         </form>
       )}
+
+      {loadError && <p className="mt-6 text-xs text-red-400">Couldn't load categories. Check your connection and try again.</p>}
 
       <div className="mt-8 overflow-x-auto rounded-card border border-white/10">
         <table className="w-full text-sm">
