@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, GraduationCap as CoursesIcon, Receipt, UserCircle, MessagesSquare } from "lucide-react";
+import { LayoutDashboard, GraduationCap as CoursesIcon, UserCircle, MessagesSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/courses", label: "My Courses", icon: CoursesIcon },
   { href: "/dashboard/chat", label: "Chat", icon: MessagesSquare },
-  { href: "/dashboard/transactions", label: "Transactions", icon: Receipt },
   { href: "/dashboard/profile", label: "Profile", icon: UserCircle },
 ];
 
