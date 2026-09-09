@@ -70,16 +70,16 @@ export default async function MockTestInstructionsPage({ params }: { params: Pro
 
       <div className="mt-8 flex flex-col sm:flex-row gap-3">
         {hasAccess ? (
-          <Link href={`/mock-tests/${slug}/attempt`} className="flex-1">
-            <Button size="lg" className="w-full">Start test</Button>
+          <Link href={`/mock-tests/${slug}/attempt`} className="w-full sm:w-auto">
+            <Button size="lg" className="w-full sm:w-auto h-14 px-10">Start test</Button>
           </Link>
         ) : (
-          <Link href="/#mock-test-pricing" className="flex-1">
-            <Button variant="accent" size="lg" className="w-full">Get mock test access</Button>
+          <Link href="/#mock-test-pricing" className="w-full sm:w-auto">
+            <Button variant="accent" size="lg" className="w-full sm:w-auto h-14 px-10">Get mock test access</Button>
           </Link>
         )}
-        <Link href={`/mock-tests/${slug}/leaderboard`}>
-          <Button variant="secondary" size="lg" className="gap-1.5">
+        <Link href={`/mock-tests/${slug}/leaderboard`} className="w-full sm:w-auto">
+          <Button variant="secondary" size="lg" className="w-full sm:w-auto h-14 px-10 gap-1.5">
             <Trophy size={15} /> Leaderboard
           </Button>
         </Link>
