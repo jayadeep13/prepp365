@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/connect";
 import { MockTestModel } from "@/models/MockTest";
 import { MockTestAttemptModel } from "@/models/MockTestAttempt";
+import "@/models/User";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

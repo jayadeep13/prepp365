@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { connectDB } from "@/lib/db/connect";
 import { UserModel } from "@/models/User";
+import "@/models/Course";
 import { getSession } from "@/lib/auth/session";
 import { PaymentStatusBanner } from "@/components/dashboard/payment-status-banner";
 

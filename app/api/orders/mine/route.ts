@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/connect";
 import { OrderModel } from "@/models/Order";
+import "@/models/Course";
 import { getSession } from "@/lib/auth/session";
 
 export async function GET() {

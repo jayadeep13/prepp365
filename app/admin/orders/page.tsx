@@ -1,5 +1,7 @@
 import { connectDB } from "@/lib/db/connect";
 import { OrderModel } from "@/models/Order";
+import "@/models/User";
+import "@/models/Course";
 import { formatINR } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/admin/stat-card";

@@ -2,6 +2,7 @@ import { Trophy } from "lucide-react";
 import { connectDB } from "@/lib/db/connect";
 import { MockTestModel } from "@/models/MockTest";
 import { MockTestAttemptModel } from "@/models/MockTestAttempt";
+import "@/models/User";
 
 type Row = {
   _id: string;

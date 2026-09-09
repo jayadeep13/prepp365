@@ -3,6 +3,7 @@ import { BookOpen, Heart, Receipt, ArrowRight } from "lucide-react";
 import { Types } from "mongoose";
 import { connectDB } from "@/lib/db/connect";
 import { UserModel } from "@/models/User";
+import "@/models/Course";
 import { OrderModel } from "@/models/Order";
 import { getSession } from "@/lib/auth/session";
 import { formatINR } from "@/lib/utils";

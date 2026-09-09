@@ -1,5 +1,6 @@
 import "server-only";
 import { CourseModel } from "@/models/Course";
+import "@/models/Category";
 import type { PublicCourse, PublicCurriculumChapter } from "@/lib/types";
 import type { PricingTier } from "@/lib/pricing";
 

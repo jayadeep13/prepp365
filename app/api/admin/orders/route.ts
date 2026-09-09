@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/connect";
 import { OrderModel } from "@/models/Order";
+import "@/models/User";
+import "@/models/Course";
 import { requireRole } from "@/lib/auth/session";
 
 export async function GET() {
