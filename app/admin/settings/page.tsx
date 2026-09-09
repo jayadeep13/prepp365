@@ -17,13 +17,20 @@ const emptyForm = {
 export default function AdminSettingsPage() {
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [savingContact, setSavingContact] = useState(false);
+  const [savedContact, setSavedContact] = useState(false);
+  const [contactError, setContactError] = useState<string | null>(null);
+  const [savingPricing, setSavingPricing] = useState(false);
+  const [savedPricing, setSavedPricing] = useState(false);
+  const [pricingError, setPricingError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/settings")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+      })
       .then((data) => {
         if (data.settings) {
           setForm({
@@ -35,6 +42,7 @@ export default function AdminSettingsPage() {
           });
         }
       })
+      .catch(() => setLoadError("Couldn't load current settings. Reload the page before saving — saving now could overwrite real data with blank defaults."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -48,24 +56,50 @@ export default function AdminSettingsPage() {
     setForm({ ...form, mockTestTiers: [...others, { ...current, [field]: value }].sort((a, b) => a.months - b.months) });
   }
 
-  async function save(e: React.FormEvent) {
+  async function saveContact(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
-    setSaved(false);
-    setError(null);
+    setSavingContact(true);
+    setSavedContact(false);
+    setContactError(null);
     try {
       const res = await fetch("/api/admin/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, mockTestTiers: form.mockTestTiers.filter((t) => t.price > 0) }),
+        body: JSON.stringify({
+          contactEmail: form.contactEmail,
+          whatsappNumber: form.whatsappNumber,
+          phoneNumber: form.phoneNumber,
+          officeAddress: form.officeAddress,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not save settings");
-      setSaved(true);
+      setSavedContact(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save settings");
+      setContactError(err instanceof Error ? err.message : "Could not save settings");
     } finally {
-      setSaving(false);
+      setSavingContact(false);
+    }
+  }
+
+  async function savePricing(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingPricing(true);
+    setSavedPricing(false);
+    setPricingError(null);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mockTestTiers: form.mockTestTiers.filter((t) => t.price > 0) }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not save pricing");
+      setSavedPricing(true);
+    } catch (err) {
+      setPricingError(err instanceof Error ? err.message : "Could not save pricing");
+    } finally {
+      setSavingPricing(false);
     }
   }
 
@@ -73,14 +107,20 @@ export default function AdminSettingsPage() {
 
   return (
     <div>
+      {loadError && (
+        <div className="mb-6 rounded-card border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
+          {loadError}
+        </div>
+      )}
+
       <h1 className="font-display text-2xl font-bold text-white">Contact settings</h1>
       <p className="mt-1 text-sm text-white/50">
         Shown in the footer, the homepage "Get in touch" section, the floating WhatsApp button, and the
         Contact Us page (needed for payment gateway approval).
       </p>
 
-      <form onSubmit={save} className="mt-6 max-w-xl rounded-card border border-white/10 bg-white/5 p-6 grid gap-4">
-        {error && <p className="text-xs text-red-400">{error}</p>}
+      <form onSubmit={saveContact} className="mt-6 max-w-xl rounded-card border border-white/10 bg-white/5 p-6 grid gap-4">
+        {contactError && <p className="text-xs text-red-400">{contactError}</p>}
         <div>
           <label className="text-xs font-semibold text-white/50 mb-1.5 block">Contact email</label>
           <input
@@ -120,8 +160,8 @@ export default function AdminSettingsPage() {
           />
         </div>
         <div className="flex items-center gap-3">
-          <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
-          {saved && <span className="text-xs text-green-400">Saved</span>}
+          <Button type="submit" disabled={savingContact}>{savingContact ? "Saving…" : "Save"}</Button>
+          {savedContact && <span className="text-xs text-green-400">Saved</span>}
         </div>
       </form>
 
@@ -130,7 +170,8 @@ export default function AdminSettingsPage() {
         Site-wide access pass to attempt any mock test — shown on the homepage. Leave a row's price at 0 to not offer that plan.
       </p>
 
-      <form onSubmit={save} className="mt-6 max-w-xl rounded-card border border-white/10 bg-white/5 p-6">
+      <form onSubmit={savePricing} className="mt-6 max-w-xl rounded-card border border-white/10 bg-white/5 p-6">
+        {pricingError && <p className="mb-3 text-xs text-red-400">{pricingError}</p>}
         <div className="grid grid-cols-3 gap-3">
           {TIER_MONTHS.map((months) => (
             <div key={months} className="rounded-xl border border-white/10 p-3">
@@ -155,8 +196,8 @@ export default function AdminSettingsPage() {
           ))}
         </div>
         <div className="mt-4 flex items-center gap-3">
-          <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save pricing"}</Button>
-          {saved && <span className="text-xs text-green-400">Saved</span>}
+          <Button type="submit" disabled={savingPricing}>{savingPricing ? "Saving…" : "Save pricing"}</Button>
+          {savedPricing && <span className="text-xs text-green-400">Saved</span>}
         </div>
       </form>
     </div>

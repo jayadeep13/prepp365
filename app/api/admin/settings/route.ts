@@ -19,10 +19,10 @@ export async function GET() {
 }
 
 const bodySchema = z.object({
-  contactEmail: z.string().email().or(z.literal("")),
-  whatsappNumber: z.string().max(20),
-  phoneNumber: z.string().max(20),
-  officeAddress: z.string().max(300),
+  contactEmail: z.string().email().or(z.literal("")).optional(),
+  whatsappNumber: z.string().max(20).optional(),
+  phoneNumber: z.string().max(20).optional(),
+  officeAddress: z.string().max(300).optional(),
   mockTestTiers: z
     .array(z.object({ months: z.number().positive(), price: z.number().nonnegative(), mrp: z.number().nonnegative() }))
     .optional(),

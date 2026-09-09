@@ -16,11 +16,16 @@ type StudentRow = {
 export default function AdminStudentsPage() {
   const [users, setUsers] = useState<StudentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/students")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+      })
       .then((data) => setUsers(data.users ?? []))
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -56,7 +61,17 @@ export default function AdminStudentsPage() {
                 </td>
               </tr>
             ))}
-            {!loading && users.length === 0 && (
+            {loadError && (
+              <tr>
+                <td colSpan={6} className="px-5 py-16 text-center">
+                  <p className="text-sm text-red-300">Couldn't load students. Check your connection and try again.</p>
+                  <button onClick={() => window.location.reload()} className="mt-3 text-sm font-semibold text-purple-400">
+                    Retry
+                  </button>
+                </td>
+              </tr>
+            )}
+            {!loading && !loadError && users.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-5 py-16 text-center">
                   <Users className="mx-auto text-white/20" size={28} />

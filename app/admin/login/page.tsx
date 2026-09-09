@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { AlertCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { signInWithPassword } from "@/lib/auth/client-actions";
+import { signInWithPassword, logout } from "@/lib/auth/client-actions";
 import { friendlyAuthError } from "@/lib/auth/friendly-error";
 
 function AdminLoginContent() {
@@ -23,7 +23,12 @@ function AdminLoginContent() {
     setError(null);
     setLoading(true);
     try {
-      await signInWithPassword(email, password);
+      const user = await signInWithPassword(email, password);
+      if (user.role !== "admin" && user.role !== "faculty") {
+        await logout();
+        setError("This account doesn't have admin access.");
+        return;
+      }
       router.push(nextPath);
     } catch (err) {
       setError(friendlyAuthError(err));

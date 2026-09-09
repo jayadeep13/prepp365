@@ -14,24 +14,33 @@ export default function AdminChatPage() {
   const [courses, setCourses] = useState<CourseOption[]>([]);
   const [courseId, setCourseId] = useState<string | null>(null);
   const [threads, setThreads] = useState<Thread[]>([]);
+  const [loadError, setLoadError] = useState(false);
   const [selected, setSelected] = useState<{ type: "class" } | { type: "support"; studentId: string; studentName: string }>({ type: "class" });
 
   useEffect(() => {
     fetch("/api/admin/courses")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+      })
       .then((data) => {
         const list: CourseOption[] = data.courses ?? [];
         setCourses(list);
         setCourseId((prev) => prev ?? list[0]?._id ?? null);
-      });
+      })
+      .catch(() => setLoadError(true));
   }, []);
 
   useEffect(() => {
     if (!courseId) return;
     function loadThreads() {
       fetch(`/api/admin/chat/threads?courseId=${courseId}`)
-        .then((res) => res.json())
-        .then((data) => setThreads(data.threads ?? []));
+        .then((res) => {
+          if (!res.ok) throw new Error("Request failed");
+          return res.json();
+        })
+        .then((data) => setThreads(data.threads ?? []))
+        .catch(() => setLoadError(true));
     }
     loadThreads();
     const interval = setInterval(loadThreads, 8000);
@@ -55,7 +64,14 @@ export default function AdminChatPage() {
         )}
       </div>
 
-      {!courseId || !session ? (
+      {loadError ? (
+        <div className="mt-8 rounded-card border border-red-500/20 bg-red-500/10 p-8 text-center">
+          <p className="text-sm text-red-300">Couldn't load chat. Check your connection and try again.</p>
+          <button onClick={() => window.location.reload()} className="mt-3 text-sm font-semibold text-purple-400">
+            Retry
+          </button>
+        </div>
+      ) : !courseId || !session ? (
         <p className="mt-8 text-sm text-white/40">Loading…</p>
       ) : (
         <div className="mt-6 grid lg:grid-cols-[280px_1fr] gap-5">
