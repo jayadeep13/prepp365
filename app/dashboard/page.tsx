@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BookOpen, Heart, Receipt, ArrowRight } from "lucide-react";
+import { Types } from "mongoose";
 import { connectDB } from "@/lib/db/connect";
 import { UserModel } from "@/models/User";
 import { OrderModel } from "@/models/Order";
@@ -20,7 +21,7 @@ async function getOverview(uid: string) {
       .lean(),
     OrderModel.countDocuments({ user: uid, status: "paid" }),
     OrderModel.aggregate([
-      { $match: { status: "paid" } },
+      { $match: { user: new Types.ObjectId(uid), status: "paid" } },
       { $group: { _id: null, sum: { $sum: "$amount" } } },
     ]),
   ]);

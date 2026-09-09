@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { Clock, Languages, Users } from "lucide-react";
 import { Rating } from "@/components/ui/rating";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { CourseDetailTabs, type CurriculumChapter, type CourseMaterial } from "@/components/course-detail-tabs";
 import { getPublishedTestimonials } from "@/lib/db/public-testimonials";
 import { CheckoutButton } from "@/components/checkout-button";
@@ -107,6 +107,7 @@ export default async function CourseDetailsPage({ params }: { params: Promise<{ 
       videoUrl: l.isFreePreview || isPurchased ? l.videoUrl : undefined,
     })),
   }));
+  const firstLessonId = course.curriculum?.[0]?.lessons?.[0]?._id;
   const related = (await getPublishedCourses({ category: course.category._id }))
     .filter((c) => c.slug !== slug)
     .slice(0, 4);
@@ -169,10 +170,13 @@ export default async function CourseDetailsPage({ params }: { params: Promise<{ 
                   </div>
                 </>
               )}
-              {isPurchased && (
-                <Button variant="secondary" size="lg" className="w-full mt-2.5">
+              {isPurchased && firstLessonId && (
+                <Link
+                  href={`/courses/${course.slug}/learn/${firstLessonId}`}
+                  className={buttonVariants({ variant: "secondary", size: "lg", className: "w-full mt-2.5" })}
+                >
                   Go to course
-                </Button>
+                </Link>
               )}
             </div>
           </div>
