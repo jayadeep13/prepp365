@@ -8,7 +8,8 @@ import { formatINR } from "@/lib/utils";
 import type { PublicCourse } from "@/lib/types";
 
 export function CourseCard({ course }: { course: PublicCourse }) {
-  const discount = Math.round(((course.mrp - course.price) / course.mrp) * 100);
+  const hasDiscount = course.mrp > course.price;
+  const discount = hasDiscount ? Math.round(((course.mrp - course.price) / course.mrp) * 100) : 0;
 
   return (
     <div className="group flex flex-col rounded-card border border-surface-line bg-white overflow-hidden shadow-glass hover:shadow-glass-lg hover:-translate-y-1 transition-all duration-300">
@@ -59,11 +60,13 @@ export function CourseCard({ course }: { course: PublicCourse }) {
               <span className="font-display text-lg font-bold text-ink">
                 {formatINR(course.price)}
               </span>
-              <span className="text-xs text-ink-faint line-through">
-                {formatINR(course.mrp)}
-              </span>
+              {hasDiscount && (
+                <span className="text-xs text-ink-faint line-through">
+                  {formatINR(course.mrp)}
+                </span>
+              )}
             </div>
-            <span className="text-[11px] font-semibold text-green-600">{discount}% off</span>
+            {hasDiscount && <span className="text-[11px] font-semibold text-green-600">{discount}% off</span>}
           </div>
           <Link href={`/courses/${course.slug}`}>
             <Button size="sm">Enroll</Button>

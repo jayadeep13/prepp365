@@ -31,7 +31,7 @@ export default async function Home() {
   const courses = await loadCourses();
   const compact = courses.length <= 4;
 
-  const latest = [...courses].filter((c) => c.isNew).concat(courses.slice(0, 4)).slice(0, 4);
+  const latest = [...new Map([...courses.filter((c) => c.isNew), ...courses].map((c) => [c.slug, c])).values()].slice(0, 4);
   const popular = [...courses].sort((a, b) => b.students - a.students).slice(0, 4);
 
   const featured = courses[0];

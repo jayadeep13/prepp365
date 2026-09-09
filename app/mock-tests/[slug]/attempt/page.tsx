@@ -110,6 +110,15 @@ export default function MockTestAttemptPage({ params }: { params: Promise<{ slug
     return <div className="container-page py-16 text-center text-ink-faint">Loading test…</div>;
   }
 
+  if (test.questions.length === 0) {
+    return (
+      <div className="container-page py-16 max-w-md text-center">
+        <AlertCircle className="mx-auto text-red-500" size={28} />
+        <p className="mt-3 text-sm text-ink-soft">This test has no questions yet. Please contact support.</p>
+      </div>
+    );
+  }
+
   const q = test.questions[current];
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;

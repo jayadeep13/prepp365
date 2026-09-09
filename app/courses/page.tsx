@@ -14,6 +14,7 @@ function CoursesContent() {
   const [courses, setCourses] = useState<PublicCourse[]>([]);
   const [categories, setCategories] = useState<PublicCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [selected, setSelected] = useState<string[]>(initial ? [initial] : []);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"popular" | "priceLow" | "priceHigh" | "rating">("popular");
@@ -21,13 +22,20 @@ function CoursesContent() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/courses").then((res) => res.json()),
-      fetch("/api/categories").then((res) => res.json()),
+      fetch("/api/courses").then((res) => {
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+      }),
+      fetch("/api/categories").then((res) => {
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+      }),
     ])
       .then(([coursesData, categoriesData]) => {
         setCourses(coursesData.courses ?? []);
         setCategories(categoriesData.categories ?? []);
       })
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -152,7 +160,18 @@ function CoursesContent() {
             </div>
           )}
 
-          {!loading && filtered.length === 0 ? (
+          {loadError ? (
+            <div className="rounded-card border border-dashed border-red-200 bg-red-50 py-20 text-center">
+              <p className="font-display font-semibold text-red-700">Couldn't load courses</p>
+              <p className="text-sm text-red-600 mt-1">Check your connection and try again.</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="inline-block mt-3 text-sm font-semibold text-purple-600"
+              >
+                Retry
+              </button>
+            </div>
+          ) : !loading && filtered.length === 0 ? (
             <div className="rounded-card border border-dashed border-surface-line py-20 text-center">
               <p className="font-display font-semibold text-ink">No courses match those filters</p>
               <p className="text-sm text-ink-faint mt-1">Try clearing a filter or searching a different exam.</p>

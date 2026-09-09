@@ -13,6 +13,7 @@ export default function DashboardChatPage() {
   const [courses, setCourses] = useState<PurchasedCourse[] | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [tab, setTab] = useState<"class" | "support">("class");
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/dashboard/my-courses")
@@ -20,9 +21,15 @@ export default function DashboardChatPage() {
         if (!res.ok) throw new Error("Request failed");
         return res.json();
       })
-      .then((data) => setCourses(data.purchasedCourses ?? []))
+      .then((data) => {
+        const list: PurchasedCourse[] = data.purchasedCourses ?? [];
+        setCourses(list);
+        setSelectedCourseId(list[0]?._id ?? null);
+      })
       .catch(() => setLoadError(true));
   }, []);
+
+  const selectedCourse = courses?.find((c) => c._id === selectedCourseId) ?? courses?.[0];
 
   return (
     <div>
@@ -48,8 +55,22 @@ export default function DashboardChatPage() {
             View course →
           </Link>
         </div>
-      ) : (
+      ) : !selectedCourse ? null : (
         <>
+          {courses.length > 1 && (
+            <select
+              value={selectedCourse._id}
+              onChange={(e) => setSelectedCourseId(e.target.value)}
+              className="mt-6 rounded-xl border border-surface-line px-3.5 py-2.5 text-sm font-semibold text-ink outline-none focus:border-purple-400"
+            >
+              {courses.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
+          )}
+
           <div className="mt-6 flex gap-1 border-b border-surface-line">
             {(["class", "support"] as const).map((t) => (
               <button
@@ -68,15 +89,17 @@ export default function DashboardChatPage() {
           <div className="mt-5">
             {tab === "class" ? (
               <ChatPanel
+                key={`class-${selectedCourse._id}`}
                 endpoint="/api/chat/class"
-                params={{ courseId: courses[0]._id }}
+                params={{ courseId: selectedCourse._id }}
                 currentUserId={session.uid}
                 emptyText="No messages yet — say hello to your batchmates!"
               />
             ) : (
               <ChatPanel
+                key={`support-${selectedCourse._id}`}
                 endpoint="/api/chat/support"
-                params={{ courseId: courses[0]._id }}
+                params={{ courseId: selectedCourse._id }}
                 currentUserId={session.uid}
                 emptyText="Ask Firdaus a doubt — she'll reply here."
               />
