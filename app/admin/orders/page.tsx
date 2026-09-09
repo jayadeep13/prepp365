@@ -3,7 +3,7 @@ import { OrderModel } from "@/models/Order";
 import { formatINR } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/admin/stat-card";
-import { Receipt, CheckCircle2, Clock, IndianRupee, PackageOpen } from "lucide-react";
+import { Receipt, Clock, IndianRupee, PackageOpen } from "lucide-react";
 
 type OrderRow = {
   _id: string;
@@ -46,12 +46,11 @@ export default async function AdminOrdersPage() {
   return (
     <div>
       <h1 className="font-display text-2xl font-bold text-white">Orders</h1>
-      <p className="mt-1 text-sm text-white/50">{paid.length} successful orders (of {orders.length} total, including unpaid).</p>
+      <p className="mt-1 text-sm text-white/50">{paid.length} orders placed.</p>
 
-      <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Receipt} label="Total orders" value={orders.length.toLocaleString("en-IN")} tone="purple" />
-        <StatCard icon={CheckCircle2} label="Paid" value={paid.length.toLocaleString("en-IN")} tone="blue" />
-        <StatCard icon={Clock} label="Pending" value={pending.length.toLocaleString("en-IN")} tone="orange" />
+      <div className="mt-8 grid sm:grid-cols-3 gap-4">
+        <StatCard icon={Receipt} label="Total orders" value={paid.length.toLocaleString("en-IN")} tone="purple" />
+        <StatCard icon={Clock} label="Unpaid checkouts" value={pending.length.toLocaleString("en-IN")} tone="orange" />
         <StatCard icon={IndianRupee} label="Revenue collected" value={formatINR(revenue)} tone="green" />
       </div>
 
