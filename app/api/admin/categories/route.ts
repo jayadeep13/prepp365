@@ -21,7 +21,7 @@ export async function GET() {
 
 const bodySchema = z.object({
   name: z.string().min(1),
-  group: z.enum(["Government Exams", "Teaching", "Medical & Engineering"]),
+  group: z.string().min(1),
   slug: z.string().optional(),
 });
 

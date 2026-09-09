@@ -4,11 +4,7 @@ const categorySchema = new Schema(
   {
     slug: { type: String, required: true, unique: true, index: true },
     name: { type: String, required: true },
-    group: {
-      type: String,
-      enum: ["Government Exams", "Teaching", "Medical & Engineering"],
-      required: true,
-    },
+    group: { type: String, required: true },
     icon: { type: String, default: "BookOpen" },
   },
   { timestamps: true }

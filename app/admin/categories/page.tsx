@@ -8,18 +8,20 @@ type CategoryRow = {
   _id: string;
   name: string;
   slug: string;
-  group: "Government Exams" | "Teaching" | "Medical & Engineering";
+  group: string;
 };
 
-const groups = ["Government Exams", "Teaching", "Medical & Engineering"] as const;
+const presetGroups = ["Government Exams", "Teaching", "Medical & Engineering"] as const;
+const CUSTOM_GROUP = "__custom__";
 
-const emptyForm = { name: "", group: groups[0] as (typeof groups)[number] };
+const emptyForm = { name: "", group: presetGroups[0] as string };
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [customGroup, setCustomGroup] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -51,18 +53,24 @@ export default function AdminCategoriesPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
+    const group = form.group === CUSTOM_GROUP ? customGroup.trim() : form.group;
+    if (!group) {
+      setError("Enter a name for the custom group.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
       const res = await fetch("/api/admin/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: form.name, group: form.group }),
+        body: JSON.stringify({ name: form.name, group }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not create category");
       setFormOpen(false);
       setForm(emptyForm);
+      setCustomGroup("");
       load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create category");
@@ -102,13 +110,29 @@ export default function AdminCategoriesPage() {
             <label className="text-xs font-semibold text-white/50 mb-1.5 block">Group</label>
             <select
               value={form.group}
-              onChange={(e) => setForm({ ...form, group: e.target.value as (typeof groups)[number] })}
+              onChange={(e) => setForm({ ...form, group: e.target.value })}
               className={inputClass}
             >
-              {groups.map((g) => (
+              {presetGroups.map((g) => (
                 <option key={g} value={g}>{g}</option>
               ))}
+              {categories
+                .map((c) => c.group)
+                .filter((g, i, all) => !presetGroups.includes(g as (typeof presetGroups)[number]) && all.indexOf(g) === i)
+                .map((g) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              <option value={CUSTOM_GROUP}>Other (custom)…</option>
             </select>
+            {form.group === CUSTOM_GROUP && (
+              <input
+                required
+                value={customGroup}
+                onChange={(e) => setCustomGroup(e.target.value)}
+                className={`${inputClass} mt-2`}
+                placeholder="Custom group name"
+              />
+            )}
           </div>
           <div className="sm:col-span-2">
             <Button type="submit" disabled={saving}>{saving ? "Creating…" : "Create category"}</Button>

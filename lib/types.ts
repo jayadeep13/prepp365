@@ -2,7 +2,7 @@ export type PublicCategory = {
   _id: string;
   slug: string;
   name: string;
-  group: "Government Exams" | "Teaching" | "Medical & Engineering";
+  group: string;
   icon: string;
   courseCount: number;
 };
