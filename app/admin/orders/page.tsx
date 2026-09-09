@@ -46,7 +46,7 @@ export default async function AdminOrdersPage() {
   return (
     <div>
       <h1 className="font-display text-2xl font-bold text-white">Orders</h1>
-      <p className="mt-1 text-sm text-white/50">{orders.length} orders total.</p>
+      <p className="mt-1 text-sm text-white/50">{paid.length} successful orders (of {orders.length} total, including unpaid).</p>
 
       <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={Receipt} label="Total orders" value={orders.length.toLocaleString("en-IN")} tone="purple" />
@@ -68,7 +68,7 @@ export default async function AdminOrdersPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {orders.map((o) => (
+            {paid.map((o) => (
               <tr key={o._id} className="transition-colors hover:bg-white/[0.03]">
                 <td className="px-5 py-3.5 text-white/80">{o.user?.name ?? "—"}</td>
                 <td className="px-5 py-3.5 text-white/80">{o.course?.title ?? "—"}</td>
@@ -82,11 +82,11 @@ export default async function AdminOrdersPage() {
                 </td>
               </tr>
             ))}
-            {orders.length === 0 && (
+            {paid.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-5 py-16 text-center">
                   <PackageOpen className="mx-auto text-white/20" size={28} />
-                  <p className="mt-3 text-sm text-white/40">No orders yet.</p>
+                  <p className="mt-3 text-sm text-white/40">No successful orders yet.</p>
                   <p className="mt-1 text-xs text-white/25">Paid enrollments will show up here as students check out.</p>
                 </td>
               </tr>
