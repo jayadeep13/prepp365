@@ -3,7 +3,9 @@ import { Schema, model, models, type InferSchemaType, type Model } from "mongoos
 const questionSchema = new Schema(
   {
     text: { type: String, required: true },
+    textHindi: { type: String },
     options: { type: [String], required: true },
+    optionsHindi: { type: [String] },
     correctIndex: { type: Number, required: true },
     explanation: { type: String },
     marks: { type: Number, default: 1 },
@@ -26,6 +28,7 @@ const mockTestSchema = new Schema(
     negativeMarking: { type: Number, default: 0.25 }, // marks deducted per wrong answer
     questions: [questionSchema],
     isPublished: { type: Boolean, default: false },
+    isFree: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

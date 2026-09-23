@@ -5,7 +5,16 @@ import Link from "next/link";
 import { CheckCircle2, XCircle, MinusCircle, Trophy, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Question = { _id: string; text: string; options: string[]; correctIndex: number; explanation?: string; marks: number };
+type Question = {
+  _id: string;
+  text: string;
+  textHindi?: string;
+  options: string[];
+  optionsHindi?: string[];
+  correctIndex: number;
+  explanation?: string;
+  marks: number;
+};
 type Attempt = {
   score: number;
   maxScore: number;
@@ -95,9 +104,12 @@ export default function MockTestResultPage({
                   ) : (
                     <XCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
                   )}
-                  <p className="text-sm text-ink font-medium">
-                    {i + 1}. {q.text}
-                  </p>
+                  <div>
+                    <p className="text-sm text-ink font-medium">
+                      {i + 1}. {q.text}
+                    </p>
+                    {q.textHindi && <p className="text-xs text-ink-faint mt-0.5">{q.textHindi}</p>}
+                  </div>
                 </div>
                 <div className="mt-3 ml-6 space-y-1.5">
                   {q.options.map((opt, oi) => (
@@ -113,6 +125,7 @@ export default function MockTestResultPage({
                       )}
                     >
                       {String.fromCharCode(65 + oi)}. {opt}
+                      {q.optionsHindi?.[oi] && <span className="block opacity-70 mt-0.5">{q.optionsHindi[oi]}</span>}
                     </div>
                   ))}
                 </div>

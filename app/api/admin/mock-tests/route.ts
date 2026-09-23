@@ -17,7 +17,7 @@ export async function GET() {
   }
 
   const tests = await MockTestModel.find()
-    .select("title slug examTag type durationMinutes negativeMarking questions isPublished category")
+    .select("title slug examTag type durationMinutes negativeMarking questions isPublished isFree category")
     .populate("category", "name slug")
     .sort({ createdAt: -1 })
     .lean();
@@ -34,6 +34,7 @@ const bodySchema = z.object({
   type: z.enum(["full-length", "chapter-wise", "previous-paper"]),
   durationMinutes: z.number().positive(),
   negativeMarking: z.number().min(0).max(1),
+  isFree: z.boolean().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -73,6 +74,7 @@ export async function POST(req: NextRequest) {
     negativeMarking: parsed.negativeMarking,
     questions: [],
     isPublished: false,
+    isFree: parsed.isFree ?? false,
   });
 
   return NextResponse.json({ test });

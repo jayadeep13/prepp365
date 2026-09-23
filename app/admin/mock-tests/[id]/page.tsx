@@ -2,12 +2,20 @@
 
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
-import { Plus, Trash2, X, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, X, AlertTriangle, Lock, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CloudinaryUploader } from "@/components/admin/cloudinary-uploader";
 import { MOCK_TEST_TEMPLATE } from "@/lib/mocktest-pdf-parser";
 
-type Question = { _id?: string; text: string; options: string[]; correctIndex: number; marks: number };
+type Question = {
+  _id?: string;
+  text: string;
+  textHindi?: string;
+  options: string[];
+  optionsHindi?: string[];
+  correctIndex: number;
+  marks: number;
+};
 type TestData = {
   _id: string;
   title: string;
@@ -16,10 +24,18 @@ type TestData = {
   durationMinutes: number;
   negativeMarking: number;
   isPublished: boolean;
+  isFree: boolean;
   questions: Question[];
 };
 
-const emptyQuestion = (): Question => ({ text: "", options: ["", ""], correctIndex: 0, marks: 1 });
+const emptyQuestion = (): Question => ({
+  text: "",
+  textHindi: "",
+  options: ["", ""],
+  optionsHindi: ["", ""],
+  correctIndex: 0,
+  marks: 1,
+});
 
 export default function AdminMockTestManagePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -78,6 +94,16 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
     }
   }
 
+  async function toggleFree() {
+    if (!test) return;
+    await fetch(`/api/admin/mock-tests/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isFree: !test.isFree }),
+    });
+    load();
+  }
+
   async function togglePublish() {
     if (!test) return;
     if (!test.isPublished && questions.length === 0) {
@@ -121,19 +147,34 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
       prev.map((q, i) => (i === qIndex ? { ...q, options: q.options.map((o, oi) => (oi === optIndex ? value : o)) } : q))
     );
   }
+  function updateOptionHindi(qIndex: number, optIndex: number, value: string) {
+    setQuestions((prev) =>
+      prev.map((q, i) => {
+        if (i !== qIndex) return q;
+        const optionsHindi = [...(q.optionsHindi ?? q.options.map(() => ""))];
+        optionsHindi[optIndex] = value;
+        return { ...q, optionsHindi };
+      })
+    );
+  }
   function addOption(qIndex: number) {
-    setQuestions((prev) => prev.map((q, i) => (i === qIndex ? { ...q, options: [...q.options, ""] } : q)));
+    setQuestions((prev) =>
+      prev.map((q, i) =>
+        i === qIndex ? { ...q, options: [...q.options, ""], optionsHindi: [...(q.optionsHindi ?? q.options.map(() => "")), ""] } : q
+      )
+    );
   }
   function removeOption(qIndex: number, optIndex: number) {
     setQuestions((prev) =>
       prev.map((q, i) => {
         if (i !== qIndex) return q;
         const options = q.options.filter((_, oi) => oi !== optIndex);
+        const optionsHindi = (q.optionsHindi ?? q.options.map(() => "")).filter((_, oi) => oi !== optIndex);
         // Removing the option that was marked correct must reset to an explicit choice —
         // never silently let a different option inherit "correct" just because it shifted into that slot.
         const correctIndex =
           q.correctIndex === optIndex ? 0 : q.correctIndex > optIndex ? q.correctIndex - 1 : q.correctIndex;
-        return { ...q, options, correctIndex };
+        return { ...q, options, optionsHindi, correctIndex };
       })
     );
   }
@@ -184,14 +225,26 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
       <Link href="/admin/mock-tests" className="text-sm font-semibold text-purple-400">← All mock tests</Link>
       <div className="mt-2 flex items-center justify-between gap-4">
         <h1 className="font-display text-2xl font-bold text-white">{test.title}</h1>
-        <button
-          onClick={togglePublish}
-          className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
-            test.isPublished ? "bg-green-500/15 text-green-400 hover:bg-green-500/25" : "bg-white/10 text-white/60 hover:bg-white/20"
-          }`}
-        >
-          {test.isPublished ? "Published — click to unpublish" : "Draft — click to publish"}
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            onClick={toggleFree}
+            title="Click to toggle free / paid"
+            className={`flex items-center gap-1 rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
+              test.isFree ? "bg-green-500/15 text-green-400 hover:bg-green-500/25" : "bg-white/10 text-white/60 hover:bg-white/20"
+            }`}
+          >
+            {test.isFree ? <Unlock size={13} /> : <Lock size={13} />}
+            {test.isFree ? "Free" : "Paid"}
+          </button>
+          <button
+            onClick={togglePublish}
+            className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
+              test.isPublished ? "bg-green-500/15 text-green-400 hover:bg-green-500/25" : "bg-white/10 text-white/60 hover:bg-white/20"
+            }`}
+          >
+            {test.isPublished ? "Published — click to unpublish" : "Draft — click to publish"}
+          </button>
+        </div>
       </div>
       <p className="text-sm text-white/50">Manage test details and questions.</p>
 
@@ -254,6 +307,8 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
         )}
         <p className="mt-3 text-xs text-white/40">
           The PDF must follow that format exactly — each question starts with "Q1.", lettered options, then an "Answer: X" line.
+          A Hindi line placed directly below its English question or option is picked up automatically as that line's translation.
+          If the PDF has no Hindi, leave it out — you can type the Hindi translation into each question below after uploading.
         </p>
         <div className="mt-4">
           <CloudinaryUploader
@@ -298,13 +353,22 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
           <div key={qi} className="rounded-card border border-white/10 bg-white/5 p-5">
             <div className="flex items-start justify-between gap-3">
               <span className="mt-2.5 shrink-0 text-xs font-mono text-white/30">Q{qi + 1}</span>
-              <textarea
-                value={q.text}
-                onChange={(e) => updateQuestion(qi, { text: e.target.value })}
-                rows={2}
-                placeholder="Question text"
-                className={`${inputClass} flex-1`}
-              />
+              <div className="flex-1 space-y-1.5">
+                <textarea
+                  value={q.text}
+                  onChange={(e) => updateQuestion(qi, { text: e.target.value })}
+                  rows={2}
+                  placeholder="Question text (English)"
+                  className={inputClass}
+                />
+                <textarea
+                  value={q.textHindi ?? ""}
+                  onChange={(e) => updateQuestion(qi, { textHindi: e.target.value })}
+                  rows={2}
+                  placeholder="प्रश्न (हिंदी) — optional"
+                  className={`${inputClass} text-white/70`}
+                />
+              </div>
               <button onClick={() => removeQuestion(qi)} className="mt-2 shrink-0 text-red-400 hover:text-red-300">
                 <Trash2 size={15} />
               </button>
@@ -320,12 +384,20 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
                     onChange={() => updateQuestion(qi, { correctIndex: oi })}
                     className="h-4 w-4 shrink-0 text-purple-600"
                   />
-                  <input
-                    value={opt}
-                    onChange={(e) => updateOption(qi, oi, e.target.value)}
-                    placeholder={`Option ${String.fromCharCode(65 + oi)}`}
-                    className={`${inputClass} flex-1`}
-                  />
+                  <div className="flex-1 space-y-1.5">
+                    <input
+                      value={opt}
+                      onChange={(e) => updateOption(qi, oi, e.target.value)}
+                      placeholder={`Option ${String.fromCharCode(65 + oi)} (English)`}
+                      className={inputClass}
+                    />
+                    <input
+                      value={q.optionsHindi?.[oi] ?? ""}
+                      onChange={(e) => updateOptionHindi(qi, oi, e.target.value)}
+                      placeholder={`विकल्प ${String.fromCharCode(65 + oi)} (हिंदी) — optional`}
+                      className={`${inputClass} text-white/70`}
+                    />
+                  </div>
                   {q.options.length > 2 && (
                     <button onClick={() => removeOption(qi, oi)} className="shrink-0 text-white/30 hover:text-red-400">
                       <X size={14} />

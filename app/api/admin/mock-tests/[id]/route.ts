@@ -32,7 +32,9 @@ const questionSchema = z.object({
   // those ids are what attempt answers and scoring are matched against. Omitted for new questions.
   _id: z.string().optional(),
   text: z.string().min(1),
+  textHindi: z.string().optional(),
   options: z.array(z.string().min(1)).min(2),
+  optionsHindi: z.array(z.string()).optional(),
   correctIndex: z.number().int().min(0),
   marks: z.number().positive(),
 });
@@ -44,6 +46,7 @@ const bodySchema = z.object({
   durationMinutes: z.number().positive().optional(),
   negativeMarking: z.number().min(0).max(1).optional(),
   isPublished: z.boolean().optional(),
+  isFree: z.boolean().optional(),
   questions: z.array(questionSchema).optional(),
 });
 

@@ -16,6 +16,7 @@ type TestRow = {
   type: string;
   durationMinutes: number;
   questionCount: number;
+  isFree: boolean;
   category?: { name?: string };
 };
 
@@ -26,7 +27,7 @@ async function getTests(): Promise<TestRow[]> {
     return [];
   }
   const tests = await MockTestModel.find({ isPublished: true })
-    .select("title slug examTag type durationMinutes questions category")
+    .select("title slug examTag type durationMinutes questions isFree category")
     .populate("category", "name")
     .lean();
   return tests.map((t) => ({
@@ -36,6 +37,7 @@ async function getTests(): Promise<TestRow[]> {
     type: t.type ?? "chapter-wise",
     durationMinutes: t.durationMinutes,
     questionCount: t.questions?.length ?? 0,
+    isFree: Boolean(t.isFree),
     category: t.category as unknown as { name?: string },
   }));
 }
@@ -76,7 +78,10 @@ export default async function MockTestsPage() {
                 className="group rounded-card border border-surface-line bg-white p-5 hover:shadow-glass transition-shadow"
               >
                 <div className="flex items-center justify-between">
-                  <Badge tone="purple">{t.examTag}</Badge>
+                  <div className="flex items-center gap-1.5">
+                    <Badge tone="purple">{t.examTag}</Badge>
+                    {t.isFree && <Badge tone="orange">Free</Badge>}
+                  </div>
                   <Icon size={18} className="text-purple-500" />
                 </div>
                 <h3 className="mt-4 font-display font-semibold text-ink group-hover:text-purple-600 transition-colors">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, X, ClipboardList } from "lucide-react";
+import { Plus, X, ClipboardList, Lock, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type TestRow = {
@@ -12,6 +12,7 @@ type TestRow = {
   type: string;
   questionCount: number;
   isPublished: boolean;
+  isFree: boolean;
   category: { name?: string } | null;
 };
 
@@ -24,6 +25,7 @@ const emptyForm = {
   type: "chapter-wise" as "full-length" | "chapter-wise" | "previous-paper",
   durationMinutes: 30,
   negativeMarking: 0.25,
+  isFree: false,
 };
 
 export default function AdminMockTestsPage() {
@@ -60,6 +62,15 @@ export default function AdminMockTestsPage() {
     if (!confirm("Delete this mock test?")) return;
     await fetch(`/api/admin/mock-tests/${id}`, { method: "DELETE" });
     setTests((prev) => prev.filter((t) => t._id !== id));
+  }
+
+  async function toggleFree(id: string, current: boolean) {
+    await fetch(`/api/admin/mock-tests/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isFree: !current }),
+    });
+    setTests((prev) => prev.map((t) => (t._id === id ? { ...t, isFree: !current } : t)));
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -131,6 +142,14 @@ export default function AdminMockTestsPage() {
           <Field label="Negative marking (per wrong answer)">
             <input required type="number" min={0} max={1} step={0.05} value={form.negativeMarking} onChange={(e) => setForm({ ...form, negativeMarking: Number(e.target.value) })} className={inputClass} />
           </Field>
+          <label className="flex items-center gap-2 text-sm text-white/70 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={form.isFree}
+              onChange={(e) => setForm({ ...form, isFree: e.target.checked })}
+            />
+            Free test (no mock test pass required)
+          </label>
           <div className="sm:col-span-2">
             <Button type="submit" disabled={saving}>{saving ? "Creating…" : "Create test (unpublished)"}</Button>
             <p className="mt-2 text-xs text-white/40">You'll add questions (via PDF upload or manually) on the next screen.</p>
@@ -147,6 +166,7 @@ export default function AdminMockTestsPage() {
               <th className="px-5 py-3.5 font-semibold">Type</th>
               <th className="px-5 py-3.5 font-semibold">Questions</th>
               <th className="px-5 py-3.5 font-semibold">Status</th>
+              <th className="px-5 py-3.5 font-semibold">Access</th>
               <th className="px-5 py-3.5 font-semibold text-right">Actions</th>
             </tr>
           </thead>
@@ -162,6 +182,20 @@ export default function AdminMockTestsPage() {
                     {t.isPublished ? "Published" : "Draft"}
                   </span>
                 </td>
+                <td className="px-5 py-3.5">
+                  <button
+                    onClick={() => toggleFree(t._id, Boolean(t.isFree))}
+                    title="Click to toggle free / paid"
+                    className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${
+                      t.isFree
+                        ? "bg-green-500/15 text-green-400 hover:bg-green-500/25"
+                        : "bg-white/10 text-white/50 hover:bg-white/20"
+                    }`}
+                  >
+                    {t.isFree ? <Unlock size={12} /> : <Lock size={12} />}
+                    {t.isFree ? "Free" : "Paid"}
+                  </button>
+                </td>
                 <td className="px-5 py-3.5 text-right">
                   <Link href={`/admin/mock-tests/${t._id}`} className="text-xs font-semibold text-purple-400 hover:text-purple-300 mr-4">
                     Manage
@@ -174,7 +208,7 @@ export default function AdminMockTestsPage() {
             ))}
             {!loading && tests.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-16 text-center">
+                <td colSpan={7} className="px-5 py-16 text-center">
                   <ClipboardList className="mx-auto text-white/20" size={28} />
                   <p className="mt-3 text-sm text-white/40">No mock tests yet.</p>
                   <p className="mt-1 text-xs text-white/25">Create one, then add questions from the manage screen.</p>

@@ -1,17 +1,26 @@
 export type ParsedQuestion = {
   text: string;
+  textHindi?: string;
   options: string[];
+  optionsHindi?: string[];
   correctIndex: number;
   marks: number;
 };
 
 // The exact format admins must follow when typing/exporting a question paper
-// to PDF. Shown in the admin UI next to the upload button.
+// to PDF. Shown in the admin UI next to the upload button. A Hindi line placed
+// directly below its English question/option line is picked up as that line's
+// translation — it's optional, and can be left out or filled in manually later.
 export const MOCK_TEST_TEMPLATE = `Q1. What is the capital of France?
+फ्रांस की राजधानी क्या है?
 A) London
+लंदन
 B) Paris
+पेरिस
 C) Berlin
+बर्लिन
 D) Madrid
+मैड्रिड
 Answer: B
 Marks: 1
 
@@ -25,6 +34,7 @@ const QUESTION_START = /^Q\s*\d+[.):]/i;
 const OPTION_LINE = /^([A-Za-z])[.):]\s*(.+)$/;
 const ANSWER_LINE = /^Answer\s*:\s*([A-Za-z])/i;
 const MARKS_LINE = /^Marks?\s*:\s*(\d+(?:\.\d+)?)/i;
+const DEVANAGARI_TEXT = /[ऀ-ॿ]/;
 
 /**
  * Parses text extracted from an admin-authored PDF into structured questions.
@@ -48,14 +58,21 @@ export function parseMockTestText(raw: string): { questions: ParsedQuestion[]; e
 
     const firstLineMatch = lines[0].match(/^Q\s*\d+[.):]\s*(.*)$/i);
     let questionText = firstLineMatch?.[1]?.trim() ?? "";
+    let questionTextHindi = "";
     const options: string[] = [];
+    const optionsHindi: string[] = [];
     let answerLetter: string | null = null;
     let marks = 1;
 
     let i = 1;
     // Question text may wrap onto following lines until the first option marker.
+    // A Devanagari line in that span is the question's Hindi translation, not a wrap.
     while (i < lines.length && !OPTION_LINE.test(lines[i]) && !ANSWER_LINE.test(lines[i])) {
-      questionText += ` ${lines[i]}`;
+      if (DEVANAGARI_TEXT.test(lines[i])) {
+        questionTextHindi += questionTextHindi ? ` ${lines[i]}` : lines[i];
+      } else {
+        questionText += ` ${lines[i]}`;
+      }
       i++;
     }
 
@@ -69,6 +86,11 @@ export function parseMockTestText(raw: string): { questions: ParsedQuestion[]; e
         marks = parseFloat(marksMatch[1]);
       } else if (optionMatch) {
         options.push(optionMatch[2].trim());
+        optionsHindi.push("");
+      } else if (DEVANAGARI_TEXT.test(lines[i]) && options.length > 0) {
+        // An unlettered Devanagari line right after an option is that option's Hindi translation.
+        const last = options.length - 1;
+        optionsHindi[last] = optionsHindi[last] ? `${optionsHindi[last]} ${lines[i]}` : lines[i];
       }
     }
 
@@ -91,7 +113,14 @@ export function parseMockTestText(raw: string): { questions: ParsedQuestion[]; e
       continue;
     }
 
-    questions.push({ text: questionText.trim(), options, correctIndex, marks });
+    questions.push({
+      text: questionText.trim(),
+      textHindi: questionTextHindi.trim() || undefined,
+      options,
+      optionsHindi: optionsHindi.some(Boolean) ? optionsHindi : undefined,
+      correctIndex,
+      marks,
+    });
   }
 
   return { questions, errors };

@@ -17,18 +17,19 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     return NextResponse.json({ error: "Database not connected." }, { status: 503 });
   }
 
-  if (!(await hasMockTestAccess(session))) {
-    return NextResponse.json(
-      { error: "You need mock test access to attempt this. Purchase a plan from the homepage.", code: "NO_ACCESS" },
-      { status: 403 }
-    );
-  }
-
   const test = await MockTestModel.findOne({ slug, isPublished: true })
     .select("-questions.correctIndex -questions.explanation")
     .populate("category", "name slug")
     .lean();
 
   if (!test) return NextResponse.json({ error: "Test not found" }, { status: 404 });
+
+  if (!test.isFree && !(await hasMockTestAccess(session))) {
+    return NextResponse.json(
+      { error: "You need mock test access to attempt this. Purchase a plan from the homepage.", code: "NO_ACCESS" },
+      { status: 403 }
+    );
+  }
+
   return NextResponse.json({ test });
 }

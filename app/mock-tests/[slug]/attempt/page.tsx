@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth/use-session";
 import { cn } from "@/lib/utils";
 
-type Question = { _id: string; text: string; options: string[]; marks: number };
+type Question = { _id: string; text: string; textHindi?: string; options: string[]; optionsHindi?: string[]; marks: number };
 type TestData = { title: string; durationMinutes: number; questions: Question[] };
 
 export default function MockTestAttemptPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -144,6 +144,7 @@ export default function MockTestAttemptPage({ params }: { params: Promise<{ slug
             Question {current + 1} of {test.questions.length} · {q.marks} mark{q.marks !== 1 ? "s" : ""}
           </p>
           <p className="mt-3 font-display text-lg text-ink leading-relaxed">{q.text}</p>
+          {q.textHindi && <p className="mt-1 text-sm text-ink-soft leading-relaxed">{q.textHindi}</p>}
 
           <div className="mt-6 space-y-2.5">
             {q.options.map((opt, i) => (
@@ -165,7 +166,10 @@ export default function MockTestAttemptPage({ params }: { params: Promise<{ slug
                 >
                   {String.fromCharCode(65 + i)}
                 </span>
-                {opt}
+                <span>
+                  {opt}
+                  {q.optionsHindi?.[i] && <span className="block text-xs text-ink-faint mt-0.5">{q.optionsHindi[i]}</span>}
+                </span>
               </button>
             ))}
           </div>

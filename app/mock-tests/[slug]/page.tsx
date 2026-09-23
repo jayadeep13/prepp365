@@ -15,7 +15,7 @@ async function getTest(slug: string) {
     return null;
   }
   return MockTestModel.findOne({ slug, isPublished: true })
-    .select("title examTag type durationMinutes negativeMarking questions")
+    .select("title examTag type durationMinutes negativeMarking questions isFree")
     .lean();
 }
 
@@ -25,12 +25,15 @@ export default async function MockTestInstructionsPage({ params }: { params: Pro
   if (!test) notFound();
 
   const session = await getSession();
-  const hasAccess = await hasMockTestAccess(session);
+  const hasAccess = test.isFree || (await hasMockTestAccess(session));
   const totalMarks = test.questions.reduce((sum, q) => sum + (q.marks ?? 1), 0);
 
   return (
     <div className="container-page py-14 max-w-2xl">
-      <Badge tone="orange">{test.examTag}</Badge>
+      <div className="flex items-center gap-2">
+        <Badge tone="orange">{test.examTag}</Badge>
+        {test.isFree && <Badge tone="purple">Free</Badge>}
+      </div>
       <h1 className="mt-3 font-display text-3xl font-bold text-ink">{test.title}</h1>
 
       <div className="mt-8 grid sm:grid-cols-3 gap-4">
