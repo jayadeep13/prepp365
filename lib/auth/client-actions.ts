@@ -12,6 +12,7 @@ import {
   type ConfirmationResult,
 } from "firebase/auth";
 import { firebaseAuth, googleProvider, firebaseConfigured } from "@/lib/firebase/client";
+import { notifySessionChanged } from "@/lib/auth/use-session";
 
 export class AuthNotConfiguredError extends Error {
   constructor() {
@@ -39,6 +40,7 @@ async function establishSession(
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Could not sign you in. Please try again.");
+  notifySessionChanged(); // header etc. re-fetch so the account name shows without a page reload
   return data.user;
 }
 
@@ -111,4 +113,5 @@ export async function confirmOtp(confirmation: ConfirmationResult, code: string)
 export async function logout() {
   if (firebaseAuth) await signOut(firebaseAuth).catch(() => {});
   await fetch("/api/auth/logout", { method: "POST" });
+  notifySessionChanged();
 }

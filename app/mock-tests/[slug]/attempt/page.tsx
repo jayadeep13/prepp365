@@ -7,9 +7,27 @@ import { Timer, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth/use-session";
 import { cn } from "@/lib/utils";
+import { MatchTable } from "@/components/mock-tests/match-table";
 
-type Question = { _id: string; text: string; textHindi?: string; options: string[]; optionsHindi?: string[]; marks: number };
-type TestData = { title: string; durationMinutes: number; questions: Question[] };
+type MatchItem = { text: string; textHindi?: string };
+type Question = {
+  _id: string;
+  text: string;
+  textHindi?: string;
+  options: string[];
+  optionsHindi?: string[];
+  marks: number;
+  negativeMarks?: number;
+  matchLeft?: MatchItem[];
+  matchRight?: MatchItem[];
+};
+type TestData = {
+  title: string;
+  durationMinutes: number;
+  negativeMarking?: number;
+  negativeMarksPerWrong?: number;
+  questions: Question[];
+};
 
 export default function MockTestAttemptPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -120,6 +138,7 @@ export default function MockTestAttemptPage({ params }: { params: Promise<{ slug
   }
 
   const q = test.questions[current];
+  const penalty = q.negativeMarks ?? test.negativeMarksPerWrong ?? q.marks * (test.negativeMarking ?? 0);
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;
 
@@ -141,10 +160,13 @@ export default function MockTestAttemptPage({ params }: { params: Promise<{ slug
       <div className="grid lg:grid-cols-[1fr_240px] gap-6">
         <div className="rounded-card border border-surface-line bg-white p-6">
           <p className="text-xs font-mono text-ink-faint">
-            Question {current + 1} of {test.questions.length} · {q.marks} mark{q.marks !== 1 ? "s" : ""}
+            Question {current + 1} of {test.questions.length} ·{" "}
+            <span className="text-green-600 font-semibold">+{q.marks}</span>
+            {penalty > 0 && <span className="text-red-500 font-semibold"> / −{Math.round(penalty * 100) / 100}</span>}
           </p>
-          <p className="mt-3 font-display text-lg text-ink leading-relaxed">{q.text}</p>
-          {q.textHindi && <p className="mt-1 text-sm text-ink-soft leading-relaxed">{q.textHindi}</p>}
+          <p className="mt-3 font-display text-lg text-ink leading-relaxed whitespace-pre-line">{q.text}</p>
+          {q.textHindi && <p className="mt-1 text-sm text-ink-soft leading-relaxed whitespace-pre-line">{q.textHindi}</p>}
+          <MatchTable left={q.matchLeft} right={q.matchRight} />
 
           <div className="mt-6 space-y-2.5">
             {q.options.map((opt, i) => (
@@ -166,7 +188,7 @@ export default function MockTestAttemptPage({ params }: { params: Promise<{ slug
                 >
                   {String.fromCharCode(65 + i)}
                 </span>
-                <span>
+                <span className="whitespace-pre-line">
                   {opt}
                   {q.optionsHindi?.[i] && <span className="block text-xs text-ink-faint mt-0.5">{q.optionsHindi[i]}</span>}
                 </span>

@@ -332,6 +332,7 @@ export default function AdminCourseManagePage({ params }: { params: Promise<{ id
             <CloudinaryUploader
               resourceType="video"
               folder="banners"
+              autoSubtitles={false}
               label={detailsForm.introVideoUrl ? "Replace intro video" : "Upload intro video"}
               onUploaded={(r) => setDetailsForm({ ...detailsForm, introVideoUrl: r.secureUrl, introVideoPublicId: r.publicId })}
             />

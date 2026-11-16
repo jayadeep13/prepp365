@@ -24,7 +24,8 @@ const emptyForm = {
   categorySlug: "",
   type: "chapter-wise" as "full-length" | "chapter-wise" | "previous-paper",
   durationMinutes: 30,
-  negativeMarking: 0.25,
+  marksPerCorrect: 1,
+  negativeMarksPerWrong: 0.25,
   isFree: false,
 };
 
@@ -139,8 +140,11 @@ export default function AdminMockTestsPage() {
           <Field label="Duration (minutes)">
             <input required type="number" min={1} value={form.durationMinutes} onChange={(e) => setForm({ ...form, durationMinutes: Number(e.target.value) })} className={inputClass} />
           </Field>
-          <Field label="Negative marking (per wrong answer)">
-            <input required type="number" min={0} max={1} step={0.05} value={form.negativeMarking} onChange={(e) => setForm({ ...form, negativeMarking: Number(e.target.value) })} className={inputClass} />
+          <Field label="Marks for each correct answer (+)">
+            <input required type="number" min={0.25} step={0.25} value={form.marksPerCorrect} onChange={(e) => setForm({ ...form, marksPerCorrect: Number(e.target.value) })} className={inputClass} />
+          </Field>
+          <Field label="Negative marks for each wrong answer (−)">
+            <input required type="number" min={0} step={0.01} value={form.negativeMarksPerWrong} onChange={(e) => setForm({ ...form, negativeMarksPerWrong: Number(e.target.value) })} className={inputClass} />
           </Field>
           <label className="flex items-center gap-2 text-sm text-white/70 sm:col-span-2">
             <input

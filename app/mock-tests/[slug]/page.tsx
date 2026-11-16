@@ -15,7 +15,7 @@ async function getTest(slug: string) {
     return null;
   }
   return MockTestModel.findOne({ slug, isPublished: true })
-    .select("title examTag type durationMinutes negativeMarking questions isFree")
+    .select("title examTag type durationMinutes negativeMarking negativeMarksPerWrong marksPerCorrect questions isFree")
     .lean();
 }
 
@@ -27,6 +27,10 @@ export default async function MockTestInstructionsPage({ params }: { params: Pro
   const session = await getSession();
   const hasAccess = test.isFree || (await hasMockTestAccess(session));
   const totalMarks = test.questions.reduce((sum, q) => sum + (q.marks ?? 1), 0);
+  const firstQ = test.questions[0];
+  const marksPerCorrect = firstQ?.marks ?? test.marksPerCorrect ?? 1;
+  const negativePerWrong =
+    Math.round((firstQ?.negativeMarks ?? test.negativeMarksPerWrong ?? marksPerCorrect * (test.negativeMarking ?? 0)) * 100) / 100;
 
   return (
     <div className="container-page py-14 max-w-2xl">
@@ -49,8 +53,10 @@ export default async function MockTestInstructionsPage({ params }: { params: Pro
         </div>
         <div className="rounded-card border border-surface-line p-4 text-center">
           <AlertTriangle size={18} className="mx-auto text-orange-500" />
-          <p className="mt-2 font-display text-xl font-bold text-ink">-{test.negativeMarking}</p>
-          <p className="text-xs text-ink-faint">per wrong answer</p>
+          <p className="mt-2 font-display text-xl font-bold text-ink">
+            <span className="text-green-600">+{marksPerCorrect}</span> / <span className="text-red-500">−{negativePerWrong}</span>
+          </p>
+          <p className="text-xs text-ink-faint">correct / wrong answer</p>
         </div>
       </div>
 
@@ -58,7 +64,11 @@ export default async function MockTestInstructionsPage({ params }: { params: Pro
         <p className="font-display font-semibold text-ink text-sm mb-3">Instructions</p>
         <ul className="space-y-1.5 text-sm text-ink-soft list-disc list-inside">
           <li>The test auto-submits when the timer reaches zero.</li>
-          <li>Each wrong answer deducts {test.negativeMarking} marks; unattempted questions score zero.</li>
+          <li>
+            Each correct answer gives +{marksPerCorrect}
+            {negativePerWrong > 0 ? `, each wrong answer deducts ${negativePerWrong}` : ", there is no negative marking"};
+            unattempted questions score zero. Marks are shown on each question.
+          </li>
           <li>You can navigate between questions freely and change answers before submitting.</li>
           <li>Once submitted, you'll see your score, accuracy, and a full answer review.</li>
         </ul>

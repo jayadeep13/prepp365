@@ -15,6 +15,8 @@ import { logout } from "@/lib/auth/client-actions";
 const navLinks = [
   { label: "Courses", href: "/courses" },
   { label: "Mock Tests", href: "/mock-tests" },
+  { label: "PYQ", href: "/pyqs" },
+  { label: "PYQs with Solution", href: "/pyq-solutions" },
 ];
 
 const roleDashboard: Record<string, string> = {
@@ -165,10 +167,17 @@ export function Header({ categories }: { categories: PublicCategory[] }) {
           </form>
           {!loading && session ? (
             <div className="flex items-center gap-2">
-              <Link href={roleDashboard[session.role] ?? "/dashboard"}>
-                <Button variant="secondary" size="sm" className="gap-1.5">
-                  <LayoutDashboard size={14} /> {session.name?.split(" ")[0] ?? "Dashboard"}
-                </Button>
+              <Link
+                href={roleDashboard[session.role] ?? "/dashboard"}
+                title={`${session.name ?? "My account"} — go to dashboard`}
+                className="flex items-center gap-2 rounded-full border border-surface-line bg-white py-1 pl-1 pr-4 hover:bg-surface-tint transition-colors"
+              >
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-gradient text-sm font-bold text-white">
+                  {(session.name?.trim()?.[0] ?? "U").toUpperCase()}
+                </span>
+                <span className="max-w-[140px] truncate text-sm font-semibold text-ink">
+                  {session.name?.trim() || "My account"}
+                </span>
               </Link>
               <button
                 onClick={handleLogout}
@@ -218,8 +227,9 @@ export function Header({ categories }: { categories: PublicCategory[] }) {
               {!loading && session ? (
                 <div className="flex gap-2 mt-2">
                   <Link href={roleDashboard[session.role] ?? "/dashboard"} className="flex-1">
-                    <Button variant="secondary" size="sm" className="w-full">
-                      Dashboard
+                    <Button variant="secondary" size="sm" className="w-full gap-1.5">
+                      <LayoutDashboard size={14} />
+                      <span className="truncate">{session.name?.trim() || "Dashboard"}</span>
                     </Button>
                   </Link>
                   <Button variant="primary" size="sm" className="flex-1" onClick={handleLogout}>

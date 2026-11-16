@@ -1,21 +1,35 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Play, Pause, RotateCcw, CheckCircle2, Gauge, Maximize, Minimize } from "lucide-react";
+import { Play, Pause, RotateCcw, CheckCircle2, Gauge, Maximize, Minimize, Captions } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+const speedLabel = (s: number) => (s === 1 ? "Normal" : `${s}x`);
+
+const SUBTITLE_LANGS = [
+  { code: "en", label: "English" },
+  { code: "hi", label: "हिंदी (Hindi)" },
+] as const;
+type SubtitleLang = "off" | (typeof SUBTITLE_LANGS)[number]["code"];
 
 export function VideoPlayer({
   src,
   courseId,
   lessonId,
+  publicId,
+  deliveryType = "authenticated",
   initialPositionSeconds = 0,
   onComplete,
 }: {
   src: string;
-  courseId: string;
-  lessonId: string;
+  /** Omit both to disable progress tracking (e.g. PYQ solution videos). */
+  courseId?: string;
+  lessonId?: string;
+  /** Cloudinary public_id — enables the auto-generated English/Hindi subtitles. */
+  publicId?: string;
+  /** Delivery type the video was uploaded with. */
+  deliveryType?: "authenticated" | "upload";
   initialPositionSeconds?: number;
   onComplete?: () => void;
 }) {
@@ -24,6 +38,9 @@ export function VideoPlayer({
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [speedMenuOpen, setSpeedMenuOpen] = useState(false);
+  const [subtitle, setSubtitle] = useState<SubtitleLang>("off");
+  const [ccMenuOpen, setCcMenuOpen] = useState(false);
+  const [ccUnavailable, setCcUnavailable] = useState<Record<string, boolean>>({});
   const [progress, setProgress] = useState(0); // 0-100
   const [resumed, setResumed] = useState(false);
   const [completed, setCompleted] = useState(false);
@@ -35,6 +52,15 @@ export function VideoPlayer({
     document.addEventListener("fullscreenchange", onChange);
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
+
+  // Show only the selected subtitle track.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    for (const track of Array.from(video.textTracks)) {
+      track.mode = track.language === subtitle ? "showing" : "disabled";
+    }
+  }, [subtitle]);
 
   function toggleFullscreen() {
     if (document.fullscreenElement) {
@@ -48,6 +74,7 @@ export function VideoPlayer({
   function handleLoadedMetadata() {
     const video = videoRef.current;
     if (!video) return;
+    video.playbackRate = speed;
     if (initialPositionSeconds > 2 && initialPositionSeconds < video.duration - 5) {
       video.currentTime = initialPositionSeconds;
       setResumed(true);
@@ -73,6 +100,7 @@ export function VideoPlayer({
   }
 
   async function saveProgress(positionSeconds: number, durationSeconds: number, done: boolean) {
+    if (!courseId || !lessonId) return;
     try {
       await fetch("/api/progress", {
         method: "POST",
@@ -98,6 +126,8 @@ export function VideoPlayer({
   function togglePlay() {
     const video = videoRef.current;
     if (!video) return;
+    setSpeedMenuOpen(false);
+    setCcMenuOpen(false);
     if (video.paused) {
       video.play();
       setPlaying(true);
@@ -112,6 +142,11 @@ export function VideoPlayer({
     if (video) video.playbackRate = rate;
     setSpeed(rate);
     setSpeedMenuOpen(false);
+  }
+
+  function chooseSubtitle(lang: SubtitleLang) {
+    setSubtitle(lang);
+    setCcMenuOpen(false);
   }
 
   function handleSeek(e: React.MouseEvent<HTMLDivElement>) {
@@ -137,7 +172,19 @@ export function VideoPlayer({
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
           onClick={togglePlay}
-        />
+        >
+          {publicId &&
+            SUBTITLE_LANGS.map((l) => (
+              <track
+                key={l.code}
+                kind="subtitles"
+                srcLang={l.code}
+                label={l.label}
+                src={`/api/subtitles?publicId=${encodeURIComponent(publicId)}&lang=${l.code}&type=${deliveryType}`}
+                onError={() => setCcUnavailable((u) => ({ ...u, [l.code]: true }))}
+              />
+            ))}
+        </video>
 
         {resumed && (
           <div className="absolute top-3 right-3 rounded-full bg-black/70 px-3 py-1.5 text-[11px] font-semibold text-white flex items-center gap-1.5">
@@ -154,10 +201,7 @@ export function VideoPlayer({
 
       {/* Controls */}
       <div className="bg-ink px-4 py-3">
-        <div
-          onClick={handleSeek}
-          className="h-1.5 w-full cursor-pointer rounded-full bg-white/15 mb-3 overflow-hidden"
-        >
+        <div onClick={handleSeek} className="h-1.5 w-full cursor-pointer rounded-full bg-white/15 mb-3 overflow-hidden">
           <div className="h-full bg-brand-gradient" style={{ width: `${progress}%` }} />
         </div>
 
@@ -167,23 +211,61 @@ export function VideoPlayer({
           </button>
 
           <div className="flex items-center gap-1">
-            <button
-              onClick={toggleFullscreen}
-              aria-label={fullscreen ? "Exit full screen" : "Full screen"}
-              className="grid h-8 w-8 place-items-center rounded-full text-white hover:bg-white/10"
-            >
-              {fullscreen ? <Minimize size={15} /> : <Maximize size={15} />}
-            </button>
+            {publicId && (
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setCcMenuOpen((v) => !v);
+                    setSpeedMenuOpen(false);
+                  }}
+                  aria-label="Subtitles"
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold hover:bg-white/10",
+                    subtitle === "off" ? "text-white" : "text-purple-300"
+                  )}
+                >
+                  <Captions size={14} /> {subtitle === "off" ? "CC" : subtitle.toUpperCase()}
+                </button>
+                {ccMenuOpen && (
+                  <div className="absolute bottom-full right-0 mb-2 z-10 rounded-xl bg-white shadow-glass-lg overflow-hidden">
+                    <p className="px-4 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wide text-ink-faint">Subtitles</p>
+                    {(["off", ...SUBTITLE_LANGS.map((l) => l.code)] as SubtitleLang[]).map((code) => {
+                      const label = code === "off" ? "Off" : SUBTITLE_LANGS.find((l) => l.code === code)!.label;
+                      return (
+                        <button
+                          key={code}
+                          onClick={() => chooseSubtitle(code)}
+                          className={cn(
+                            "block w-full px-4 py-2 text-left text-xs font-semibold whitespace-nowrap",
+                            code === subtitle ? "bg-purple-50 text-purple-700" : "text-ink-soft hover:bg-surface-tint"
+                          )}
+                        >
+                          {label}
+                          {code !== "off" && ccUnavailable[code] && (
+                            <span className="ml-1.5 font-normal text-ink-faint">(not ready yet)</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="relative">
               <button
-                onClick={() => setSpeedMenuOpen((v) => !v)}
+                onClick={() => {
+                  setSpeedMenuOpen((v) => !v);
+                  setCcMenuOpen(false);
+                }}
+                aria-label="Playback speed"
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10"
               >
-                <Gauge size={13} /> {speed}x
+                <Gauge size={13} /> {speedLabel(speed)}
               </button>
               {speedMenuOpen && (
-                <div className="absolute bottom-full right-0 mb-2 rounded-xl bg-white shadow-glass-lg overflow-hidden">
+                <div className="absolute bottom-full right-0 mb-2 z-10 rounded-xl bg-white shadow-glass-lg overflow-hidden">
+                  <p className="px-4 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wide text-ink-faint">Speed</p>
                   {SPEEDS.map((s) => (
                     <button
                       key={s}
@@ -193,12 +275,20 @@ export function VideoPlayer({
                         s === speed ? "bg-purple-50 text-purple-700" : "text-ink-soft hover:bg-surface-tint"
                       )}
                     >
-                      {s}x
+                      {speedLabel(s)}
                     </button>
                   ))}
                 </div>
               )}
             </div>
+
+            <button
+              onClick={toggleFullscreen}
+              aria-label={fullscreen ? "Exit full screen" : "Full screen"}
+              className="grid h-8 w-8 place-items-center rounded-full text-white hover:bg-white/10"
+            >
+              {fullscreen ? <Minimize size={15} /> : <Maximize size={15} />}
+            </button>
           </div>
         </div>
       </div>
