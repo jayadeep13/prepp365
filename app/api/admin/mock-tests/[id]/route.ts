@@ -37,6 +37,9 @@ const questionSchema = z.object({
   optionsHindi: z.array(z.string()).optional(),
   correctIndex: z.number().int().min(0),
   marks: z.number().positive(),
+  negativeMarks: z.number().min(0).optional(),
+  matchLeft: z.array(z.object({ text: z.string().min(1), textHindi: z.string().optional() })).optional(),
+  matchRight: z.array(z.object({ text: z.string().min(1), textHindi: z.string().optional() })).optional(),
 });
 
 const bodySchema = z.object({
@@ -45,6 +48,10 @@ const bodySchema = z.object({
   type: z.enum(["full-length", "chapter-wise", "previous-paper"]).optional(),
   durationMinutes: z.number().positive().optional(),
   negativeMarking: z.number().min(0).max(1).optional(),
+  marksPerCorrect: z.number().positive().optional(),
+  negativeMarksPerWrong: z.number().min(0).optional(),
+  // When true, marksPerCorrect / negativeMarksPerWrong are also written onto every existing question.
+  applyMarksToAllQuestions: z.boolean().optional(),
   isPublished: z.boolean().optional(),
   isFree: z.boolean().optional(),
   questions: z.array(questionSchema).optional(),
@@ -59,7 +66,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   try {
     parsed = bodySchema.parse(await req.json());
   } catch (err) {
-    return NextResponse.json({ error: "Invalid mock test data", details: String(err) }, { status: 400 });
+    const issue = err instanceof z.ZodError ? err.issues[0] : null;
+    const where =
+      issue?.path?.[0] === "questions" && typeof issue.path[1] === "number"
+        ? ` (question ${issue.path[1] + 1}: ${issue.path.slice(2).join(".")})`
+        : "";
+    return NextResponse.json(
+      { error: `Invalid mock test data${where}${issue ? ` — ${issue.message}` : ""}` },
+      { status: 400 }
+    );
   }
 
   for (const q of parsed.questions ?? []) {
@@ -74,9 +89,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Database not connected." }, { status: 503 });
   }
 
+  const { applyMarksToAllQuestions, ...update } = parsed;
+
+  // Drop empty match lists so normal MCQs don't carry empty arrays.
+  for (const q of update.questions ?? []) {
+    if (!q.matchLeft?.length) delete q.matchLeft;
+    if (!q.matchRight?.length) delete q.matchRight;
+  }
+
   let test;
   try {
-    test = await MockTestModel.findByIdAndUpdate(id, { $set: parsed }, { new: true }).lean();
+    if (applyMarksToAllQuestions && !update.questions) {
+      const existing = await MockTestModel.findById(id);
+      if (!existing) return NextResponse.json({ error: "Test not found" }, { status: 404 });
+      for (const q of existing.questions) {
+        if (update.marksPerCorrect !== undefined) q.marks = update.marksPerCorrect;
+        if (update.negativeMarksPerWrong !== undefined) q.negativeMarks = update.negativeMarksPerWrong;
+      }
+      await existing.save();
+    }
+    test = await MockTestModel.findByIdAndUpdate(id, { $set: update }, { new: true }).lean();
   } catch {
     return NextResponse.json({ error: "Test not found" }, { status: 404 });
   }

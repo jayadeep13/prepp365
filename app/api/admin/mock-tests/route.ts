@@ -33,7 +33,9 @@ const bodySchema = z.object({
   categorySlug: z.string().min(1),
   type: z.enum(["full-length", "chapter-wise", "previous-paper"]),
   durationMinutes: z.number().positive(),
-  negativeMarking: z.number().min(0).max(1),
+  negativeMarking: z.number().min(0).max(1).optional(),
+  marksPerCorrect: z.number().positive().default(1),
+  negativeMarksPerWrong: z.number().min(0).default(0),
   isFree: z.boolean().optional(),
 });
 
@@ -71,7 +73,9 @@ export async function POST(req: NextRequest) {
     category: category._id,
     type: parsed.type,
     durationMinutes: parsed.durationMinutes,
-    negativeMarking: parsed.negativeMarking,
+    negativeMarking: parsed.negativeMarking ?? 0,
+    marksPerCorrect: parsed.marksPerCorrect,
+    negativeMarksPerWrong: parsed.negativeMarksPerWrong,
     questions: [],
     isPublished: false,
     isFree: parsed.isFree ?? false,

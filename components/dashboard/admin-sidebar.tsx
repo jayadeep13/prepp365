@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Receipt, Users, GraduationCap, Ticket, Tags, Quote, Megaphone, MessagesSquare, Settings, ClipboardList } from "lucide-react";
+import { BarChart3, Receipt, Users, GraduationCap, Ticket, Tags, Quote, Megaphone, MessagesSquare, Settings, ClipboardList, FileText, MonitorPlay } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const groups = [
@@ -24,6 +24,8 @@ const groups = [
       { href: "/admin/categories", label: "Categories", icon: Tags },
       { href: "/admin/courses", label: "Courses", icon: GraduationCap },
       { href: "/admin/mock-tests", label: "Mock Tests", icon: ClipboardList },
+      { href: "/admin/pyqs", label: "PYQ Papers", icon: FileText },
+      { href: "/admin/pyq-solutions", label: "PYQs with Solution", icon: MonitorPlay },
       { href: "/admin/testimonials", label: "Testimonials", icon: Quote },
       { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
     ],

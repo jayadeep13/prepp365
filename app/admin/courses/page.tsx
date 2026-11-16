@@ -98,15 +98,23 @@ export default function AdminCoursesPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
     setError(null);
+    if (!form.thumbnail) {
+      setError("Please upload a thumbnail before creating the course.");
+      return;
+    }
+    if (form.mrp > 0 && form.mrp < form.price) {
+      setError("MRP can't be lower than the price.");
+      return;
+    }
+    setSaving(true);
     try {
       const res = await fetch("/api/admin/courses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, slug: form.slug || slugify(form.title) }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({ error: `Server error (${res.status}). Please try again.` }));
       if (!res.ok) throw new Error(data.error || "Could not create course");
       setFormOpen(false);
       setForm({ ...emptyForm, categorySlug: categories[0]?.slug ?? "" });
@@ -140,10 +148,25 @@ export default function AdminCoursesPage() {
         <form onSubmit={handleCreate} className="mt-6 rounded-card border border-white/10 bg-white/5 p-6 grid sm:grid-cols-2 gap-4">
           {error && <p className="sm:col-span-2 text-xs text-red-400">{error}</p>}
           <Field label="Title">
-            <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className={inputClass} />
+            <input
+              required
+              value={form.title}
+              onChange={(e) => {
+                const title = e.target.value;
+                // Keep the slug in sync with the title until the admin edits the slug by hand.
+                setForm((f) => ({ ...f, title, slug: f.slug === slugify(f.title) ? slugify(title) : f.slug }));
+              }}
+              className={inputClass}
+            />
           </Field>
-          <Field label="Slug">
-            <input required value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className={inputClass} placeholder="ssc-cgl-2027" />
+          <Field label="Slug (URL)">
+            <input
+              value={form.slug}
+              onChange={(e) => setForm({ ...form, slug: e.target.value })}
+              onBlur={() => setForm((f) => ({ ...f, slug: slugify(f.slug) }))}
+              className={inputClass}
+              placeholder="ssc-cgl-2027"
+            />
           </Field>
           <Field label="Exam tag">
             <input required value={form.examTag} onChange={(e) => setForm({ ...form, examTag: e.target.value })} className={inputClass} placeholder="SSC-CGL-27" />
@@ -243,6 +266,14 @@ export default function AdminCoursesPage() {
       </div>
     </div>
   );
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 const inputClass =

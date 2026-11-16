@@ -58,7 +58,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       score += q.marks ?? 1;
     } else {
       wrongCount++;
-      score -= (q.marks ?? 1) * (test.negativeMarking ?? 0);
+      // Per-question negative marks win, then the test-wide absolute value,
+      // then the legacy fraction-of-marks setting.
+      const penalty =
+        q.negativeMarks ?? test.negativeMarksPerWrong ?? (q.marks ?? 1) * (test.negativeMarking ?? 0);
+      score -= penalty;
     }
   }
   score = Math.round(score * 100) / 100;

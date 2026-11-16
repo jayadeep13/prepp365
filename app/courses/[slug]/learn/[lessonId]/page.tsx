@@ -112,6 +112,8 @@ export default async function LearnPage({
                   src={(lesson.videoPublicId && signedVideoUrl(lesson.videoPublicId)) || lesson.videoUrl}
                   courseId={course._id.toString()}
                   lessonId={lesson._id.toString()}
+                  publicId={lesson.videoPublicId}
+                  deliveryType={lesson.videoUrl.includes("/authenticated/") ? "authenticated" : "upload"}
                   initialPositionSeconds={progress?.positionSeconds ?? 0}
                 />
               ) : (

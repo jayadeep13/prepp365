@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { CloudinaryUploader } from "@/components/admin/cloudinary-uploader";
 import { MOCK_TEST_TEMPLATE } from "@/lib/mocktest-pdf-parser";
 
+type MatchItem = { text: string; textHindi?: string };
 type Question = {
   _id?: string;
   text: string;
@@ -15,6 +16,9 @@ type Question = {
   optionsHindi?: string[];
   correctIndex: number;
   marks: number;
+  negativeMarks?: number;
+  matchLeft?: MatchItem[];
+  matchRight?: MatchItem[];
 };
 type TestData = {
   _id: string;
@@ -23,19 +27,29 @@ type TestData = {
   type: "full-length" | "chapter-wise" | "previous-paper";
   durationMinutes: number;
   negativeMarking: number;
+  marksPerCorrect?: number;
+  negativeMarksPerWrong?: number;
   isPublished: boolean;
   isFree: boolean;
   questions: Question[];
 };
 
-const emptyQuestion = (): Question => ({
+const emptyQuestion = (marks = 1, negativeMarks?: number): Question => ({
   text: "",
   textHindi: "",
   options: ["", ""],
   optionsHindi: ["", ""],
   correctIndex: 0,
-  marks: 1,
+  marks,
+  negativeMarks,
 });
+
+/** Test-wide defaults. Legacy tests only stored a fraction (negativeMarking), so derive from it. */
+function testDefaults(t: Partial<TestData>) {
+  const marks = t.marksPerCorrect ?? 1;
+  const negative = t.negativeMarksPerWrong ?? Math.round(marks * (t.negativeMarking ?? 0) * 100) / 100;
+  return { marks, negative };
+}
 
 export default function AdminMockTestManagePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -49,6 +63,7 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showTemplate, setShowTemplate] = useState(false);
+  const [applyToAll, setApplyToAll] = useState(true);
 
   function load() {
     fetch(`/api/admin/mock-tests/${id}`)
@@ -58,8 +73,9 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
       })
       .then((data) => {
         if (data.test) {
+          const d = testDefaults(data.test);
           setTest(data.test);
-          setDetailsForm(data.test);
+          setDetailsForm({ ...data.test, marksPerCorrect: d.marks, negativeMarksPerWrong: d.negative });
           setQuestions(data.test.questions ?? []);
         }
       })
@@ -81,7 +97,9 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
           examTag: detailsForm.examTag,
           type: detailsForm.type,
           durationMinutes: Number(detailsForm.durationMinutes),
-          negativeMarking: Number(detailsForm.negativeMarking),
+          marksPerCorrect: Number(detailsForm.marksPerCorrect),
+          negativeMarksPerWrong: Number(detailsForm.negativeMarksPerWrong),
+          applyMarksToAllQuestions: applyToAll,
         }),
       });
       const data = await res.json();
@@ -129,11 +147,17 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
         body: JSON.stringify({ pdfUrl }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Could not parse that PDF");
-      setQuestions((prev) => [...prev, ...data.questions]);
+      if (!res.ok) throw new Error(data.error || "Could not parse that file");
+      const d = testDefaults(test ?? {});
+      const parsed: Question[] = (data.questions as Question[]).map((q) => ({
+        ...q,
+        marks: q.marks ?? d.marks,
+        negativeMarks: q.negativeMarks ?? d.negative,
+      }));
+      setQuestions((prev) => [...prev, ...parsed]);
       setParseErrors(data.errors ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not parse that PDF");
+      setError(err instanceof Error ? err.message : "Could not parse that file");
     } finally {
       setParsing(false);
     }
@@ -183,7 +207,52 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
     setQuestions((prev) => prev.filter((_, i) => i !== index));
   }
   function addQuestion() {
-    setQuestions((prev) => [...prev, emptyQuestion()]);
+    const d = testDefaults(test ?? {});
+    setQuestions((prev) => [...prev, emptyQuestion(d.marks, d.negative)]);
+  }
+
+  // ---- Match-the-following table editing ----
+  function toggleMatch(qIndex: number) {
+    setQuestions((prev) =>
+      prev.map((q, i) => {
+        if (i !== qIndex) return q;
+        if (q.matchLeft || q.matchRight) return { ...q, matchLeft: undefined, matchRight: undefined };
+        return { ...q, matchLeft: [{ text: "" }, { text: "" }], matchRight: [{ text: "" }, { text: "" }] };
+      })
+    );
+  }
+  function updateMatchItem(qIndex: number, side: "matchLeft" | "matchRight", itemIndex: number, patch: Partial<MatchItem>) {
+    setQuestions((prev) =>
+      prev.map((q, i) => {
+        if (i !== qIndex) return q;
+        const list = [...(q[side] ?? [])];
+        while (list.length <= itemIndex) list.push({ text: "" });
+        list[itemIndex] = { ...list[itemIndex], ...patch };
+        return { ...q, [side]: list };
+      })
+    );
+  }
+  function addMatchRow(qIndex: number) {
+    setQuestions((prev) =>
+      prev.map((q, i) =>
+        i === qIndex
+          ? { ...q, matchLeft: [...(q.matchLeft ?? []), { text: "" }], matchRight: [...(q.matchRight ?? []), { text: "" }] }
+          : q
+      )
+    );
+  }
+  function removeMatchRow(qIndex: number, rowIndex: number) {
+    setQuestions((prev) =>
+      prev.map((q, i) =>
+        i === qIndex
+          ? {
+              ...q,
+              matchLeft: (q.matchLeft ?? []).filter((_, mi) => mi !== rowIndex),
+              matchRight: (q.matchRight ?? []).filter((_, mi) => mi !== rowIndex),
+            }
+          : q
+      )
+    );
   }
 
   async function saveQuestions() {
@@ -194,7 +263,14 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
       const res = await fetch(`/api/admin/mock-tests/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ questions }),
+        body: JSON.stringify({
+          questions: questions.map((q) => ({
+            ...q,
+            matchLeft: q.matchLeft?.filter((m) => m.text.trim()),
+            matchRight: q.matchRight?.filter((m) => m.text.trim()),
+            negativeMarks: q.negativeMarks === undefined || Number.isNaN(q.negativeMarks) ? undefined : q.negativeMarks,
+          })),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not save questions");
@@ -276,17 +352,31 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
             className={inputClass}
           />
         </Field>
-        <Field label="Negative marking (per wrong answer)">
+        <Field label="Marks for each correct answer (+)">
           <input
             type="number"
-            min={0}
-            max={1}
-            step={0.05}
-            value={detailsForm.negativeMarking ?? 0.25}
-            onChange={(e) => setDetailsForm({ ...detailsForm, negativeMarking: Number(e.target.value) })}
+            min={0.25}
+            step={0.25}
+            value={detailsForm.marksPerCorrect ?? 1}
+            onChange={(e) => setDetailsForm({ ...detailsForm, marksPerCorrect: Number(e.target.value) })}
             className={inputClass}
           />
         </Field>
+        <Field label="Negative marks for each wrong answer (−)">
+          <input
+            type="number"
+            min={0}
+            step={0.01}
+            value={detailsForm.negativeMarksPerWrong ?? 0}
+            onChange={(e) => setDetailsForm({ ...detailsForm, negativeMarksPerWrong: Number(e.target.value) })}
+            className={inputClass}
+          />
+          <p className="mt-1 text-[11px] text-white/30">Enter 0 for no negative marking. Unattempted questions score 0.</p>
+        </Field>
+        <label className="sm:col-span-2 flex items-center gap-2 text-xs text-white/60">
+          <input type="checkbox" checked={applyToAll} onChange={(e) => setApplyToAll(e.target.checked)} className="h-4 w-4" />
+          Apply these marks to all existing questions (you can still change individual questions below)
+        </label>
         <div className="sm:col-span-2">
           <Button type="submit" size="sm" disabled={savingDetails}>{savingDetails ? "Saving…" : "Save details"}</Button>
         </div>
@@ -295,7 +385,7 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
       {/* PDF upload */}
       <div className="mt-8 rounded-card border border-white/10 bg-white/5 p-6">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <p className="font-display text-sm font-semibold text-white">Upload questions from a PDF</p>
+          <p className="font-display text-sm font-semibold text-white">Upload questions from a Word (.docx) or PDF file</p>
           <button type="button" onClick={() => setShowTemplate((v) => !v)} className="text-xs font-semibold text-purple-400">
             {showTemplate ? "Hide required format" : "Show required format"}
           </button>
@@ -306,15 +396,19 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
           </pre>
         )}
         <p className="mt-3 text-xs text-white/40">
-          The PDF must follow that format exactly — each question starts with "Q1.", lettered options, then an "Answer: X" line.
-          A Hindi line placed directly below its English question or option is picked up automatically as that line's translation.
-          If the PDF has no Hindi, leave it out — you can type the Hindi translation into each question below after uploading.
+          The file must follow that format — each question starts with "Q1.", lettered options, then an "Answer: X" line
+          (optional "Marks: 2" and "Negative: 0.5" lines override the test defaults). A Hindi line placed directly below its
+          English question or option is picked up as that line's translation. For "Match the following", put the List-I / List-II
+          rows (or a 2-column Word table) before the options, and write the options as codes like "A-3, B-1, C-2".
+          <strong className="text-white/60"> For Hindi, upload a Word (.docx) file typed in a Unicode font (e.g. Mangal / Nirmala UI)</strong> —
+          PDFs often scramble Hindi text when it is extracted. Legacy fonts like Kruti Dev are not Unicode and can't be read.
         </p>
         <div className="mt-4">
           <CloudinaryUploader
             resourceType="raw"
             folder="mocktest-pdfs"
-            label={parsing ? "Parsing…" : "Upload PDF"}
+            allowedFormats={["docx", "pdf"]}
+            label={parsing ? "Parsing…" : "Upload Word / PDF"}
             onUploaded={(r) => handlePdfUploaded(r.secureUrl)}
           />
         </div>
@@ -374,6 +468,48 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
               </button>
             </div>
 
+            <div className="mt-3 ml-8">
+              <button type="button" onClick={() => toggleMatch(qi)} className="text-xs font-semibold text-purple-400">
+                {q.matchLeft || q.matchRight ? "− Remove match-the-following table" : "+ Make this a match-the-following question"}
+              </button>
+              {(q.matchLeft || q.matchRight) && (
+                <div className="mt-2 rounded-xl border border-white/10 p-3 space-y-2">
+                  <div className="grid grid-cols-[1fr_1fr_20px] gap-2 text-[11px] font-semibold text-white/40">
+                    <span>List-I</span>
+                    <span>List-II</span>
+                    <span />
+                  </div>
+                  {Array.from({ length: Math.max(q.matchLeft?.length ?? 0, q.matchRight?.length ?? 0) }).map((_, ri) => (
+                    <div key={ri} className="grid grid-cols-[1fr_1fr_20px] gap-2 items-start">
+                      {(["matchLeft", "matchRight"] as const).map((side) => (
+                        <div key={side} className="space-y-1">
+                          <input
+                            value={q[side]?.[ri]?.text ?? ""}
+                            onChange={(e) => updateMatchItem(qi, side, ri, { text: e.target.value })}
+                            placeholder={side === "matchLeft" ? `${String.fromCharCode(65 + ri)}.` : `${ri + 1}.`}
+                            className={inputClass}
+                          />
+                          <input
+                            value={q[side]?.[ri]?.textHindi ?? ""}
+                            onChange={(e) => updateMatchItem(qi, side, ri, { textHindi: e.target.value })}
+                            placeholder="हिंदी — optional"
+                            className={`${inputClass} text-white/70`}
+                          />
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => removeMatchRow(qi, ri)} className="mt-3 text-white/30 hover:text-red-400">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => addMatchRow(qi)} className="text-xs font-semibold text-purple-400">
+                    + Add row
+                  </button>
+                  <p className="text-[11px] text-white/30">Write the options below as codes, e.g. "A-3, B-1, C-2".</p>
+                </div>
+              )}
+            </div>
+
             <div className="mt-3 ml-8 space-y-2">
               {q.options.map((opt, oi) => (
                 <div key={oi} className="flex items-center gap-2">
@@ -410,13 +546,27 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
                   + Add option
                 </button>
                 <label className="flex items-center gap-1.5 text-xs text-white/50">
-                  Marks:
+                  Marks (+):
                   <input
                     type="number"
                     min={0.25}
                     step={0.25}
                     value={q.marks}
                     onChange={(e) => updateQuestion(qi, { marks: Number(e.target.value) })}
+                    className="w-16 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-white outline-none"
+                  />
+                </label>
+                <label className="flex items-center gap-1.5 text-xs text-white/50">
+                  Negative (−):
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={q.negativeMarks ?? ""}
+                    placeholder={String(testDefaults(test).negative)}
+                    onChange={(e) =>
+                      updateQuestion(qi, { negativeMarks: e.target.value === "" ? undefined : Number(e.target.value) })
+                    }
                     className="w-16 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-white outline-none"
                   />
                 </label>
@@ -427,7 +577,7 @@ export default function AdminMockTestManagePage({ params }: { params: Promise<{ 
 
         {questions.length === 0 && (
           <div className="rounded-card border border-dashed border-white/10 py-10 text-center text-sm text-white/40">
-            No questions yet. Upload a PDF above or add one manually.
+            No questions yet. Upload a Word / PDF file above or add one manually.
           </div>
         )}
       </div>
