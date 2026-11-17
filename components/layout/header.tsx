@@ -5,13 +5,14 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Search, ChevronDown, LayoutDashboard } from "lucide-react";
+import { Menu, X, Search, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PublicCategory, PublicCourse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/auth/use-session";
 import { logout } from "@/lib/auth/client-actions";
 import { AccountMenu } from "@/components/layout/account-menu";
+import { MobileMenu } from "@/components/layout/mobile-menu";
 
 const navLinks = [
   { label: "Courses", href: "/courses" },
@@ -19,12 +20,6 @@ const navLinks = [
   { label: "PYQ", href: "/pyqs" },
   { label: "PYQs with Solution", href: "/pyq-solutions" },
 ];
-
-const roleDashboard: Record<string, string> = {
-  admin: "/admin",
-  faculty: "/faculty",
-  student: "/dashboard",
-};
 
 export function Header({ categories }: { categories: PublicCategory[] }) {
   const router = useRouter();
@@ -45,6 +40,17 @@ export function Header({ categories }: { categories: PublicCategory[] }) {
     if (/^\/(dashboard|admin|faculty)(\/|$)/.test(pathname ?? "")) router.push("/");
     else router.refresh();
   }
+
+  // Close the phone menu after navigating, and stop the page behind it from scrolling while open.
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -82,7 +88,7 @@ export function Header({ categories }: { categories: PublicCategory[] }) {
     return (
       <header className="sticky top-0 z-50 border-b border-surface-line bg-white/95">
         <div className="container-page flex h-16 items-center">
-          <Link href="/" className="flex items-center shrink-0">
+          <Link href="/" className="flex items-center shrink-0 rounded-xl [@media(hover:none)]:outline-none">
             <Image src="/logo.png" alt="Prepp365" width={1821} height={864} priority className="h-12 w-auto" />
           </Link>
         </div>
@@ -98,7 +104,7 @@ export function Header({ categories }: { categories: PublicCategory[] }) {
       )}
     >
       <div className="container-page flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center shrink-0">
+        <Link href="/" className="flex items-center shrink-0 rounded-xl [@media(hover:none)]:outline-none">
           <Image src="/logo.png" alt="Prepp365" width={1821} height={864} priority className="h-12 w-auto" />
         </Link>
 
@@ -196,39 +202,16 @@ export function Header({ categories }: { categories: PublicCategory[] }) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="lg:hidden overflow-hidden border-t border-surface-line bg-white"
+            className="lg:hidden overflow-hidden border-t border-surface-line bg-white shadow-glass-lg"
           >
-            <div className="container-page py-4 flex flex-col gap-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="rounded-xl px-3 py-3 text-sm font-semibold text-ink hover:bg-surface-tint"
-                >
-                  {link.label}
-                </Link>
-              ))}
-              {!loading && session ? (
-                <div className="flex gap-2 mt-2">
-                  <Link href={roleDashboard[session.role] ?? "/dashboard"} className="flex-1">
-                    <Button variant="secondary" size="sm" className="w-full gap-1.5">
-                      <LayoutDashboard size={14} />
-                      <span className="truncate">{session.name?.trim() || "Dashboard"}</span>
-                    </Button>
-                  </Link>
-                  <Button variant="primary" size="sm" className="flex-1" onClick={handleLogout}>
-                    Log out
-                  </Button>
-                </div>
-              ) : (
-                <Link href="/login" className="mt-2 block">
-                  <Button variant="primary" size="sm" className="w-full">
-                    Log in
-                  </Button>
-                </Link>
-              )}
-            </div>
+            <MobileMenu
+              categories={categories}
+              session={session}
+              loading={loading}
+              pathname={pathname}
+              onNavigate={() => setMobileOpen(false)}
+              onLogout={handleLogout}
+            />
           </motion.div>
         )}
       </AnimatePresence>
