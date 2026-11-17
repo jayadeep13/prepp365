@@ -9,7 +9,7 @@ import { hasPurchased } from "@/lib/auth/has-purchased";
 import { signedVideoUrl } from "@/lib/cloudinary";
 import { VideoPlayer } from "@/components/learn/video-player";
 import { PdfViewer } from "@/components/learn/pdf-viewer";
-import { cn } from "@/lib/utils";
+import { cn, slugCandidates } from "@/lib/utils";
 
 type LessonLean = {
   _id: string;
@@ -28,7 +28,7 @@ async function loadData(courseSlug: string, lessonId: string) {
   await connectDB();
   const session = await getSession();
 
-  const course = (await CourseModel.findOne({ slug: courseSlug }).lean()) as unknown as CourseLean | null;
+  const course = (await CourseModel.findOne({ slug: { $in: slugCandidates(courseSlug) } }).lean()) as unknown as CourseLean | null;
   if (!course) return null;
 
   let lesson: LessonLean | null = null;

@@ -1,3 +1,4 @@
+import { slugCandidates } from "@/lib/utils";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/connect";
 import { CourseModel } from "@/models/Course";
@@ -16,7 +17,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     );
   }
 
-  const course = await CourseModel.findOne({ slug, isPublished: true })
+  const course = await CourseModel.findOne({ slug: { $in: slugCandidates(slug) }, isPublished: true })
     .populate("category", "slug name")
     .lean();
 

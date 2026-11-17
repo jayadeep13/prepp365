@@ -10,7 +10,7 @@ import { CourseDetailTabs, type CurriculumChapter } from "@/components/course-de
 import { getPublishedTestimonials } from "@/lib/db/public-testimonials";
 import { CheckoutButton } from "@/components/checkout-button";
 import { CourseCard } from "@/components/course-card";
-import { formatINR } from "@/lib/utils";
+import { formatINR, slugCandidates } from "@/lib/utils";
 import { connectDB } from "@/lib/db/connect";
 import { CourseModel } from "@/models/Course";
 import "@/models/Category";
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   } catch {
     return {};
   }
-  const course = await CourseModel.findOne({ slug, isPublished: true }).select("title description thumbnail").lean();
+  const course = await CourseModel.findOne({ slug: { $in: slugCandidates(slug) }, isPublished: true }).select("title description thumbnail").lean();
   if (!course) return {};
   return {
     title: `${course.title} | Prepp365`,
@@ -76,7 +76,7 @@ async function loadCourse(slug: string): Promise<{ course: MongoCourse; isPurcha
   } catch {
     return null;
   }
-  const course = (await CourseModel.findOne({ slug, isPublished: true })
+  const course = (await CourseModel.findOne({ slug: { $in: slugCandidates(slug) }, isPublished: true })
     .populate("category", "slug name")
     .lean()) as unknown as MongoCourse | null;
   if (!course || !course.category) return null;
@@ -116,8 +116,8 @@ export default async function CourseDetailsPage({ params }: { params: Promise<{ 
     fileUrl: m.isFreePreview || isPurchased ? m.fileUrl : undefined,
   }));
   const firstLessonId = course.curriculum?.[0]?.lessons?.[0]?._id;
-  const related = (await getPublishedCourses({ category: course.category._id }))
-    .filter((c) => c.slug !== slug)
+  const related = (await getPublishedCourses({ category: course.category?._id }))
+    .filter((c) => c.slug !== result.course.slug)
     .slice(0, 4);
   const testimonials = await getPublishedTestimonials().catch(() => []);
 
@@ -196,7 +196,7 @@ export default async function CourseDetailsPage({ params }: { params: Promise<{ 
         <CourseDetailTabs
           courseSlug={course.slug}
           instructor={course.instructor}
-          category={course.category.name}
+          category={course.category?.name ?? ""}
           students={course.students ?? 0}
           curriculum={sanitizedCurriculum}
           introVideoUrl={course.introVideoUrl}

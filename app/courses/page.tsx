@@ -48,7 +48,7 @@ function CoursesContent() {
 
   const filtered = useMemo(() => {
     let list = courses.filter((c) => {
-      const matchesCategory = selected.length === 0 || selected.includes(c.category.slug);
+      const matchesCategory = selected.length === 0 || selected.includes(c.category?.slug ?? "");
       const matchesSearch =
         !search ||
         c.title.toLowerCase().includes(search.toLowerCase()) ||

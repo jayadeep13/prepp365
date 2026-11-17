@@ -20,3 +20,18 @@ export function slugify(input: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+
+/**
+ * Slugs to try when looking up a record from a URL segment. Covers URL-encoded
+ * segments ("UGC%20NET") and legacy slugs saved with spaces/capitals, so an
+ * old or hand-typed slug never 404s.
+ */
+export function slugCandidates(raw: string): string[] {
+  let decoded = raw;
+  try {
+    decoded = decodeURIComponent(raw);
+  } catch {
+    // malformed escape sequence: use as-is
+  }
+  return Array.from(new Set([raw, decoded, slugify(decoded)].filter(Boolean)));
+}
