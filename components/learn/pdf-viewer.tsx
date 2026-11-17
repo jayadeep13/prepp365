@@ -1,6 +1,17 @@
 "use client";
 
-import { Lock, Download } from "lucide-react";
+import { Lock, Download, ExternalLink } from "lucide-react";
+
+/**
+ * Browsers ignore the `download` attribute on cross-origin links (Cloudinary),
+ * so ask Cloudinary itself to send the file as an attachment via `fl_attachment`.
+ */
+export function downloadUrl(src: string): string {
+  if (src.includes("res.cloudinary.com") && src.includes("/upload/") && !src.includes("fl_attachment")) {
+    return src.replace("/upload/", "/upload/fl_attachment/");
+  }
+  return src;
+}
 
 export function PdfViewer({
   src,
@@ -32,25 +43,32 @@ export function PdfViewer({
       <div className="relative">
         <iframe src={src} title={title} className="w-full aspect-[3/4] sm:aspect-video" />
         {watermark && (
-          <div
-            className="pointer-events-none absolute inset-0 flex items-center justify-center"
-            style={{ opacity: 0.12 }}
-          >
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ opacity: 0.12 }}>
             <span className="rotate-[-30deg] text-4xl font-display font-bold text-ink whitespace-nowrap select-none">
               {watermark}
             </span>
           </div>
         )}
       </div>
-      <div className="flex items-center justify-between px-4 py-3 border-t border-surface-line">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-surface-line">
         <p className="text-sm font-medium text-ink truncate pr-3">{title}</p>
-        <a
-          href={src}
-          download
-          className="flex items-center gap-1.5 text-xs font-semibold text-purple-600 shrink-0"
-        >
-          <Download size={13} /> Download
-        </a>
+        <div className="flex items-center gap-2 shrink-0">
+          <a
+            href={src}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-full border border-surface-line px-3.5 py-1.5 text-xs font-semibold text-ink-soft hover:bg-surface-tint"
+          >
+            <ExternalLink size={13} /> Open
+          </a>
+          <a
+            href={downloadUrl(src)}
+            download
+            className="flex items-center gap-1.5 rounded-full bg-purple-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-purple-700"
+          >
+            <Download size={13} /> Download PDF
+          </a>
+        </div>
       </div>
     </div>
   );

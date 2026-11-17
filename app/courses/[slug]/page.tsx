@@ -42,6 +42,7 @@ type RawCurriculumLesson = {
   duration?: string;
   isFreePreview?: boolean;
   videoUrl?: string;
+  pdfUrl?: string;
 };
 type RawCurriculumChapter = { _id: string; title: string; lessons: RawCurriculumLesson[] };
 type RawMaterial = { _id: string; title: string; fileUrl: string; isFreePreview?: boolean };
@@ -106,6 +107,7 @@ export default async function CourseDetailsPage({ params }: { params: Promise<{ 
       duration: l.duration,
       isFreePreview: l.isFreePreview,
       videoUrl: l.isFreePreview || isPurchased ? l.videoUrl : undefined,
+      pdfUrl: l.isFreePreview || isPurchased ? l.pdfUrl : undefined,
     })),
   }));
   // Only hand the file URL to the client for materials the viewer is actually allowed to open.

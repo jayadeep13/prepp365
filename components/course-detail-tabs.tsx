@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { faqs } from "@/lib/data";
 import { Rating } from "@/components/ui/rating";
 import { NoDownloadVideo } from "@/components/sections/no-download-video";
+import { PdfViewer } from "@/components/learn/pdf-viewer";
 
 export type CourseMaterial = { _id: string; title: string; fileUrl?: string; isFreePreview?: boolean };
 export type CourseTestimonial = { _id: string; name: string; quote: string; examResult?: string };
@@ -19,6 +20,8 @@ export type CurriculumLesson = {
   isFreePreview?: boolean;
   /** Only present when the lesson is unlocked (free preview, or the viewer has purchased the course). */
   videoUrl?: string;
+  /** Same rule as videoUrl — only sent for unlocked PDF lessons. */
+  pdfUrl?: string;
 };
 export type CurriculumChapter = { _id: string; title: string; lessons: CurriculumLesson[] };
 
@@ -308,7 +311,11 @@ function CurriculumBrowser({
               <EmptyPanel icon={PlayCircle} text="No video has been added to this lesson yet." />
             )
           ) : selected.type === "pdf" ? (
-            <EmptyPanel icon={FileText} text="This is a downloadable PDF lesson — open it from the Materials tab." />
+            selected.pdfUrl ? (
+              <PdfViewer src={selected.pdfUrl} title={selected.title} unlocked watermark="Prepp365" />
+            ) : (
+              <EmptyPanel icon={FileText} text="No PDF has been added to this lesson yet." />
+            )
           ) : (
             <EmptyPanel icon={ClipboardList} text="This is a test lesson — attempt it from Mock Tests." />
           )
