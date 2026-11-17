@@ -5,12 +5,13 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Search, ChevronDown, LogOut, LayoutDashboard } from "lucide-react";
+import { Menu, X, Search, ChevronDown, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PublicCategory, PublicCourse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/auth/use-session";
 import { logout } from "@/lib/auth/client-actions";
+import { AccountMenu } from "@/components/layout/account-menu";
 
 const navLinks = [
   { label: "Courses", href: "/courses" },
@@ -39,6 +40,10 @@ export function Header({ categories }: { categories: PublicCategory[] }) {
   async function handleLogout() {
     await logout();
     await refresh();
+    setMobileOpen(false);
+    // Leaving a signed-in-only page after signing out — go home instead of a stale dashboard.
+    if (/^\/(dashboard|admin|faculty)(\/|$)/.test(pathname ?? "")) router.push("/");
+    else router.refresh();
   }
 
   useEffect(() => {
@@ -166,27 +171,7 @@ export function Header({ categories }: { categories: PublicCategory[] }) {
             </button>
           </form>
           {!loading && session ? (
-            <div className="flex items-center gap-2">
-              <Link
-                href={roleDashboard[session.role] ?? "/dashboard"}
-                title={`${session.name ?? "My account"} — go to dashboard`}
-                className="flex items-center gap-2 rounded-full border border-surface-line bg-white py-1 pl-1 pr-4 hover:bg-surface-tint transition-colors"
-              >
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-gradient text-sm font-bold text-white">
-                  {(session.name?.trim()?.[0] ?? "U").toUpperCase()}
-                </span>
-                <span className="max-w-[140px] truncate text-sm font-semibold text-ink">
-                  {session.name?.trim() || "My account"}
-                </span>
-              </Link>
-              <button
-                onClick={handleLogout}
-                aria-label="Log out"
-                className="grid h-10 w-10 place-items-center rounded-full text-ink-soft hover:bg-surface-tint"
-              >
-                <LogOut size={16} />
-              </button>
-            </div>
+            <AccountMenu session={session} onLogout={handleLogout} />
           ) : (
             <Link href="/login">
               <Button variant="primary" size="sm">
