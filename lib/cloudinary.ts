@@ -152,6 +152,21 @@ function vttTime(seconds: number) {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${sec.toFixed(3).padStart(6, "0")}`;
 }
 
+/** Google Translation returns HTML-escaped text ("today&#39;s") — turn it back into plain text. */
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    // Word-level transcripts carry a leading space per word — collapse the doubled gaps.
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /** Converts Cloudinary's transcript JSON into WebVTT, splitting long excerpts into short cues. */
 export function transcriptToVtt(excerpts: TranscriptExcerpt[]): string {
   const cues: string[] = [];
@@ -165,11 +180,11 @@ export function transcriptToVtt(excerpts: TranscriptExcerpt[]): string {
       for (let i = 0; i < words.length; i += WORDS_PER_CUE) {
         const chunk = words.slice(i, i + WORDS_PER_CUE);
         cues.push(
-          `${vttTime(chunk[0].start_time!)} --> ${vttTime(chunk[chunk.length - 1].end_time!)}\n${chunk.map((w) => w.word).join(" ")}`
+          `${vttTime(chunk[0].start_time!)} --> ${vttTime(chunk[chunk.length - 1].end_time!)}\n${decodeEntities(chunk.map((w) => w.word).join(" "))}`
         );
       }
     } else if (ex.transcript && typeof ex.start_time === "number" && typeof ex.end_time === "number") {
-      cues.push(`${vttTime(ex.start_time)} --> ${vttTime(ex.end_time)}\n${ex.transcript.trim()}`);
+      cues.push(`${vttTime(ex.start_time)} --> ${vttTime(ex.end_time)}\n${decodeEntities(ex.transcript.trim())}`);
     }
   }
 
