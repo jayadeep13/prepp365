@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth/use-session";
 import { cn } from "@/lib/utils";
 import { MatchTable } from "@/components/mock-tests/match-table";
+import { QuestionText } from "@/components/mock-tests/question-text";
 
 type MatchItem = { text: string; textHindi?: string };
 type Question = {
@@ -164,9 +165,15 @@ export default function MockTestAttemptPage({ params }: { params: Promise<{ slug
             <span className="text-green-600 font-semibold">+{q.marks}</span>
             {penalty > 0 && <span className="text-red-500 font-semibold"> / −{Math.round(penalty * 100) / 100}</span>}
           </p>
-          <p className="mt-3 font-display text-lg text-ink leading-relaxed whitespace-pre-line">{q.text}</p>
-          {q.textHindi && <p className="mt-1 text-sm text-ink-soft leading-relaxed whitespace-pre-line">{q.textHindi}</p>}
+          <div className="mt-3">
+            <QuestionText text={q.text} hasStructuredMatch={Boolean(q.matchLeft?.length)} />
+          </div>
           <MatchTable left={q.matchLeft} right={q.matchRight} />
+          {q.textHindi && (
+            <div className="mt-5 border-t border-dashed border-surface-line pt-4">
+              <QuestionText text={q.textHindi} variant="secondary" hasStructuredMatch={Boolean(q.matchLeft?.length)} />
+            </div>
+          )}
 
           <div className="mt-6 space-y-2.5">
             {q.options.map((opt, i) => (

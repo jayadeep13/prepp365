@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CheckCircle2, XCircle, MinusCircle, Trophy, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MatchTable } from "@/components/mock-tests/match-table";
+import { QuestionText } from "@/components/mock-tests/question-text";
 
 type Question = {
   _id: string;
@@ -108,11 +109,14 @@ export default function MockTestResultPage({
                     <XCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-ink font-medium whitespace-pre-line">
-                      {i + 1}. {q.text}
-                    </p>
-                    {q.textHindi && <p className="text-xs text-ink-faint mt-0.5 whitespace-pre-line">{q.textHindi}</p>}
+                    <p className="text-xs font-mono font-semibold text-ink-faint">Q{i + 1}</p>
+                    <QuestionText text={q.text} variant="compact" hasStructuredMatch={Boolean(q.matchLeft?.length)} />
                     <MatchTable left={q.matchLeft} right={q.matchRight} compact />
+                    {q.textHindi && (
+                      <div className="mt-2 opacity-80">
+                        <QuestionText text={q.textHindi} variant="secondary" hasStructuredMatch={Boolean(q.matchLeft?.length)} />
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="mt-3 ml-6 space-y-1.5">
