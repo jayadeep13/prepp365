@@ -81,7 +81,7 @@ export function PyqHero({ variant, items }: { variant: Variant; items: PublicPyq
         }}
       />
 
-      <div className="container-page relative grid items-center gap-12 py-14 sm:py-16 lg:grid-cols-[1.15fr_0.85fr]">
+      <div className="container-page relative grid items-center gap-12 py-10 sm:py-16 lg:grid-cols-[1.15fr_0.85fr]">
         <div>
           <span className="inline-flex items-center gap-2 rounded-full border border-purple-100 bg-white px-3.5 py-1.5 text-xs font-mono font-semibold text-purple-700 shadow-glass">
             <Sparkles size={13} /> {c.eyebrow}
@@ -97,13 +97,13 @@ export function PyqHero({ variant, items }: { variant: Variant; items: PublicPyq
 
           <p className="mt-5 max-w-xl text-base text-ink-soft leading-relaxed sm:text-lg">{c.subtitle}</p>
 
-          <ul className="mt-6 flex flex-wrap gap-2.5">
+          <ul className="mt-5 sm:mt-6 flex flex-wrap gap-2 sm:gap-2.5">
             {c.perks.map((p) => (
               <li
                 key={p.label}
-                className="inline-flex items-center gap-2 rounded-full border border-white bg-white/70 px-3.5 py-2 text-sm font-semibold text-ink shadow-glass backdrop-blur"
+                className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-white bg-white/70 px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-semibold text-ink shadow-glass backdrop-blur"
               >
-                <span className="grid h-6 w-6 place-items-center rounded-full bg-purple-100 text-purple-700">
+                <span className="grid h-5 w-5 sm:h-6 sm:w-6 place-items-center rounded-full bg-purple-100 text-purple-700">
                   <p.icon size={13} />
                 </span>
                 {p.label}
@@ -111,22 +111,23 @@ export function PyqHero({ variant, items }: { variant: Variant; items: PublicPyq
             ))}
           </ul>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3">
+          <div className="mt-7 sm:mt-8 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center">
             <a
               href="#papers"
-              className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-gradient px-7 text-sm font-semibold text-white shadow-glass-lg transition-transform hover:-translate-y-0.5"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-brand-gradient px-4 sm:px-7 text-sm font-semibold text-white shadow-glass-lg transition-transform hover:-translate-y-0.5"
             >
               Browse {variant === "paper" ? "papers" : "solutions"} <ArrowRight size={16} />
             </a>
             <Link
               href={c.otherHref}
-              className="inline-flex h-12 items-center gap-2 rounded-full border border-surface-line bg-white px-7 text-sm font-semibold text-purple-700 transition-colors hover:bg-purple-50"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-surface-line bg-white px-4 sm:px-7 text-center text-sm font-semibold text-purple-700 transition-colors hover:bg-purple-50"
             >
               {c.otherLabel}
             </Link>
           </div>
 
-          <dl className="mt-10 grid max-w-md grid-cols-3 divide-x divide-surface-line rounded-2xl border border-surface-line bg-white/80 py-4 shadow-glass backdrop-blur">
+          {items.length > 0 && (
+          <dl className="mt-8 sm:mt-10 grid max-w-md grid-cols-3 divide-x divide-surface-line rounded-2xl border border-surface-line bg-white/80 py-4 shadow-glass backdrop-blur">
             {stats.map((s) => (
               <div key={s.label} className="px-4 text-center">
                 <dt className="sr-only">{s.label}</dt>
@@ -135,6 +136,7 @@ export function PyqHero({ variant, items }: { variant: Variant; items: PublicPyq
               </div>
             ))}
           </dl>
+          )}
         </div>
 
         {variant === "solution" ? <VideoSolutionIllustration /> : <PaperStackIllustration variant={variant} />}

@@ -268,7 +268,7 @@ function CurriculumBrowser({
 
   return (
     <div className="grid md:grid-cols-[280px_1fr] gap-6">
-      <div className="rounded-card border border-surface-line overflow-hidden max-h-[520px] overflow-y-auto">
+      <div className="order-2 md:order-none rounded-card border border-surface-line overflow-hidden max-h-[360px] md:max-h-[520px] overflow-y-auto">
         {curriculum.map((section) => (
           <div key={section._id}>
             <div className="bg-surface-tint px-4 py-2.5">
@@ -305,7 +305,7 @@ function CurriculumBrowser({
         ))}
       </div>
 
-      <div>
+      <div className="order-1 md:order-none min-w-0">
         {!selected ? null : unlocked ? (
           selected.type === "video" ? (
             selected.videoUrl ? (

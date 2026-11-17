@@ -94,22 +94,26 @@ export function Hero({ courses }: { courses: PublicCourse[] }) {
 
   return (
     <section
-      className="relative overflow-hidden border-b border-surface-line min-h-[520px] sm:min-h-[600px] flex items-end sm:items-center"
+      className="relative overflow-hidden border-b border-surface-line flex flex-col bg-gradient-to-b from-purple-50 to-white sm:bg-none sm:min-h-[600px] sm:flex-row sm:items-center"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <AnimatePresence mode="sync">
-        <motion.div
-          key={slide.key}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.6 }}
-          className="absolute inset-0"
-        >
-          <Image src={slide.image} alt="" fill priority className="object-cover" />
-        </motion.div>
-      </AnimatePresence>
+      {/* Phones: the banner (with the teacher photo) is its own 16:9 block above the text.
+          sm+: it fills the section behind the text. */}
+      <div className="relative aspect-[16/9] w-full sm:absolute sm:inset-0 sm:aspect-auto">
+        <AnimatePresence mode="sync">
+          <motion.div
+            key={slide.key}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6 }}
+            className="absolute inset-0"
+          >
+            <Image src={slide.image} alt="" fill priority sizes="100vw" className="object-cover object-right sm:object-center" />
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
       {slide.rating !== undefined && slide.rating > 0 && slide.students !== undefined && slide.students > 0 && (
         <div className="absolute right-6 top-6 z-10 hidden sm:flex items-center gap-4 rounded-2xl border border-white/60 bg-white/80 px-5 py-3.5 shadow-glass-lg backdrop-blur-md">
@@ -128,7 +132,7 @@ export function Hero({ courses }: { courses: PublicCourse[] }) {
         </div>
       )}
 
-      <div className="container-page relative py-12 sm:py-0 w-full">
+      <div className="container-page relative pt-6 pb-8 sm:py-0 w-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={slide.key}
@@ -138,7 +142,7 @@ export function Hero({ courses }: { courses: PublicCourse[] }) {
             transition={{ duration: 0.45 }}
             className="max-w-2xl"
           >
-            <div className="inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-xs font-mono font-semibold text-purple-700 border border-purple-100 shadow-glass">
+            <div className="inline-flex max-w-full items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-[11px] sm:text-xs font-mono font-semibold text-purple-700 border border-purple-100 shadow-glass">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-purple-500 opacity-75" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-purple-600" />
@@ -147,8 +151,8 @@ export function Hero({ courses }: { courses: PublicCourse[] }) {
             </div>
 
             <h1
-              className={`mt-5 font-display font-bold leading-[1.08] tracking-tight text-ink drop-shadow-[0_2px_20px_rgba(255,255,255,0.85)] ${
-                longTitle ? "text-3xl sm:text-5xl" : "text-4xl sm:text-6xl"
+              className={`mt-4 sm:mt-5 font-display font-bold leading-[1.08] tracking-tight text-ink drop-shadow-[0_2px_20px_rgba(255,255,255,0.85)] ${
+                longTitle ? "text-[28px] sm:text-5xl" : "text-[34px] sm:text-6xl"
               }`}
             >
               {staticPart}
@@ -171,22 +175,38 @@ export function Hero({ courses }: { courses: PublicCourse[] }) {
               </p>
             )}
 
-            <div className="mt-7 flex flex-wrap items-center gap-3">
-              <Link href={slide.href}>
-                <Button variant="primary" size="lg" className="group w-full sm:w-auto h-14 px-9 text-base sm:text-lg justify-center">
+            <div className="mt-6 sm:mt-7 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center">
+              <Link href={slide.href} className="block">
+                <Button variant="primary" size="lg" className="group w-full sm:w-auto h-12 sm:h-14 px-3 sm:px-9 text-sm sm:text-lg justify-center">
                   View course
                   <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
                 </Button>
               </Link>
-              <Link href="/register">
-                <Button variant="secondary" size="lg" className="w-full sm:w-auto h-14 px-9 text-base sm:text-lg justify-center">
+              <Link href="/register" className="block">
+                <Button variant="secondary" size="lg" className="w-full sm:w-auto h-12 sm:h-14 px-3 sm:px-9 text-sm sm:text-lg justify-center">
                   Register now
                 </Button>
               </Link>
             </div>
 
             {slide.highlights.length > 0 && (
-              <div className="mt-6 inline-flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-white/30 rounded-2xl border border-white/40 bg-white/20 shadow-glass-lg backdrop-blur-xl backdrop-saturate-150">
+              <div className="mt-5 flex flex-wrap gap-2 sm:hidden">
+                {slide.highlights.map((h, i) => {
+                  const Icon = highlightIcons[i % highlightIcons.length];
+                  return (
+                    <span
+                      key={h}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-purple-100 bg-white px-3 py-1.5 text-xs font-semibold text-ink shadow-sm"
+                    >
+                      <Icon size={13} className="text-purple-600" /> {h}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+
+            {slide.highlights.length > 0 && (
+              <div className="mt-6 hidden sm:inline-flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-white/30 rounded-2xl border border-white/40 bg-white/20 shadow-glass-lg backdrop-blur-xl backdrop-saturate-150">
                 {slide.highlights.map((h, i) => {
                   const Icon = highlightIcons[i % highlightIcons.length];
                   return (
@@ -206,7 +226,7 @@ export function Hero({ courses }: { courses: PublicCourse[] }) {
         </AnimatePresence>
 
         {slides.length > 1 && (
-          <div className="mt-7 flex items-center gap-4">
+          <div className="mt-6 sm:mt-7 flex items-center gap-4">
             <button
               onClick={prev}
               aria-label="Previous slide"
