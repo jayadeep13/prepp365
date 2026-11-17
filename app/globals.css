@@ -61,3 +61,14 @@ select option {
   color: #111827;
   background-color: #ffffff;
 }
+
+/* Hide the up/down spinner arrows on number inputs (prices, marks, etc.). */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}

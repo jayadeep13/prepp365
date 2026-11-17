@@ -25,6 +25,12 @@ const fallbackHighlights = ["Recorded video classes", "PDF notes & materials", "
 const highlightIcons = [Sparkles, MessageCircle, ShieldCheck, GraduationCap];
 
 function splitTitleForAnimation(title: string): { staticPart: string; animatedPart: string } {
+  // "NTA UGC NET Paper 1 — Complete Batch" / "SSC CGL: Full Course" → split at the
+  // separator and drop it, so the coloured part is a clean phrase on its own line.
+  const sep = title.match(/^(.+?)\s*(?:\s[—–-]\s|:\s)\s*(.+)$/);
+  if (sep && sep[2].length <= 28) {
+    return { staticPart: sep[1].trim(), animatedPart: sep[2].trim() };
+  }
   const lastComma = title.lastIndexOf(",");
   if (lastComma !== -1) {
     return { staticPart: title.slice(0, lastComma + 1), animatedPart: title.slice(lastComma + 1).trim() };
@@ -83,6 +89,8 @@ export function Hero({ courses }: { courses: PublicCourse[] }) {
   const slide = slides[index];
 
   const { staticPart, animatedPart } = splitTitleForAnimation(slide.title);
+  // Long course titles get a smaller size so every slide keeps the same compact layout.
+  const longTitle = slide.title.length > 26;
 
   return (
     <section
@@ -128,7 +136,7 @@ export function Hero({ courses }: { courses: PublicCourse[] }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.45 }}
-            className="max-w-xl"
+            className="max-w-2xl"
           >
             <div className="inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-xs font-mono font-semibold text-purple-700 border border-purple-100 shadow-glass">
               <span className="relative flex h-1.5 w-1.5">
@@ -138,36 +146,47 @@ export function Hero({ courses }: { courses: PublicCourse[] }) {
               <GraduationCap size={13} /> {slide.tag}
             </div>
 
-            <h1 className="mt-5 font-display text-4xl sm:text-6xl font-bold leading-[1.05] tracking-tight text-ink drop-shadow-[0_2px_20px_rgba(255,255,255,0.85)]">
+            <h1
+              className={`mt-5 font-display font-bold leading-[1.08] tracking-tight text-ink drop-shadow-[0_2px_20px_rgba(255,255,255,0.85)] ${
+                longTitle ? "text-3xl sm:text-5xl" : "text-4xl sm:text-6xl"
+              }`}
+            >
               {staticPart}
               {staticPart && <br />}
-              <span className="whitespace-nowrap font-accent bg-gradient-to-r from-purple-600 via-fuchsia-500 to-orange-500 bg-clip-text text-transparent">
+              <span
+                className={`font-accent bg-gradient-to-r from-purple-600 via-fuchsia-500 to-orange-500 bg-clip-text text-transparent ${
+                  animatedPart.length <= 18 ? "whitespace-nowrap" : ""
+                }`}
+              >
                 {animatedPart}
               </span>
             </h1>
 
             {slide.description && (
-              <p className="mt-4 max-w-lg text-sm sm:text-base text-ink-soft leading-relaxed drop-shadow-[0_2px_14px_rgba(255,255,255,0.8)]">
+              <p
+                title={slide.description}
+                className="mt-4 max-w-lg line-clamp-3 text-sm sm:text-base text-ink-soft leading-relaxed drop-shadow-[0_2px_14px_rgba(255,255,255,0.8)]"
+              >
                 {slide.description}
               </p>
             )}
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-7 flex flex-wrap items-center gap-3">
               <Link href={slide.href}>
-                <Button variant="primary" size="lg" className="group w-full sm:w-auto h-16 px-10 text-lg justify-center">
+                <Button variant="primary" size="lg" className="group w-full sm:w-auto h-14 px-9 text-base sm:text-lg justify-center">
                   View course
                   <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
                 </Button>
               </Link>
               <Link href="/register">
-                <Button variant="secondary" size="lg" className="w-full sm:w-auto h-16 px-10 text-lg justify-center">
+                <Button variant="secondary" size="lg" className="w-full sm:w-auto h-14 px-9 text-base sm:text-lg justify-center">
                   Register now
                 </Button>
               </Link>
             </div>
 
             {slide.highlights.length > 0 && (
-              <div className="mt-7 inline-flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-white/30 rounded-2xl border border-white/40 bg-white/20 shadow-glass-lg backdrop-blur-xl backdrop-saturate-150">
+              <div className="mt-6 inline-flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-white/30 rounded-2xl border border-white/40 bg-white/20 shadow-glass-lg backdrop-blur-xl backdrop-saturate-150">
                 {slide.highlights.map((h, i) => {
                   const Icon = highlightIcons[i % highlightIcons.length];
                   return (
@@ -187,7 +206,7 @@ export function Hero({ courses }: { courses: PublicCourse[] }) {
         </AnimatePresence>
 
         {slides.length > 1 && (
-          <div className="mt-9 flex items-center gap-4">
+          <div className="mt-7 flex items-center gap-4">
             <button
               onClick={prev}
               aria-label="Previous slide"

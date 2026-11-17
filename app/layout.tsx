@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Sora, Inter, IBM_Plex_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { SiteChrome } from "@/components/layout/site-chrome";
+import { NumberInputBehavior } from "@/components/layout/number-input-behavior";
 import { connectDB } from "@/lib/db/connect";
 import { getCategoriesWithCourseCounts } from "@/lib/db/category-counts";
 import { getSiteSettings, type PublicSiteSettings } from "@/lib/db/site-settings";
@@ -83,6 +84,7 @@ export default async function RootLayout({
         <SiteChrome categories={categories} settings={settings}>
           {children}
         </SiteChrome>
+        <NumberInputBehavior />
       </body>
     </html>
   );
