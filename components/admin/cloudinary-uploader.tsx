@@ -35,14 +35,14 @@ type UploadResult = { secureUrl: string; publicId: string };
 
 const GB = 1024 * 1024 * 1024;
 const MB = 1024 * 1024;
-// Client-side ceiling per resource type. Videos up to 3 GB are sent in 20 MB
-// chunks by the widget. NOTE: the Cloudinary *account plan* also enforces its
-// own max file size (Free plan = 100 MB for video) — the upload is rejected by
-// Cloudinary if the plan limit is lower than this.
+// Client-side ceiling per resource type — matches the Cloudinary plan
+// ("Small PAYG": video 2 GB, image 20 MB, raw/PDF/Word 20 MB), so oversized
+// files are refused up front instead of failing mid-upload. Videos are sent in
+// 20 MB chunks by the widget. Update these if the Cloudinary plan changes.
 const MAX_FILE_SIZE: Record<"video" | "image" | "raw", number> = {
-  video: 3 * GB,
+  video: 2 * GB,
   image: 20 * MB,
-  raw: 100 * MB,
+  raw: 20 * MB,
 };
 
 export function CloudinaryUploader({
@@ -70,7 +70,9 @@ export function CloudinaryUploader({
 }) {
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
-  const [spokenLanguage, setSpokenLanguage] = useState<"hi" | "en">("hi");
+  // "mix" (Hinglish) is transcribed with the Hindi speech model, which handles
+  // English words inside Hindi speech best; the English track is then a translation.
+  const [spokenLanguage, setSpokenLanguage] = useState<"mix" | "hi" | "en">("mix");
   const [subtitleNote, setSubtitleNote] = useState<string | null>(null);
   const wantsSubtitles = resourceType === "video" && autoSubtitles !== false;
 
@@ -80,7 +82,7 @@ export function CloudinaryUploader({
       const res = await fetch("/api/admin/cloudinary/transcribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publicId, restricted, spokenLanguage }),
+        body: JSON.stringify({ publicId, restricted, spokenLanguage: spokenLanguage === "en" ? "en" : "hi" }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Subtitle request failed");
@@ -122,7 +124,7 @@ export function CloudinaryUploader({
           multiple: false,
           maxFiles: 1,
           maxFileSize: MAX_FILE_SIZE[resourceType],
-          // Large files are uploaded in chunks so a 3 GB video doesn't need one giant request.
+          // Large files are uploaded in chunks so a 2 GB video doesn't need one giant request.
           chunkSize: 20 * MB,
           ...(allowedFormats ? { clientAllowedFormats: allowedFormats } : {}),
         },
@@ -159,16 +161,19 @@ export function CloudinaryUploader({
             <Captions size={13} /> Spoken language:
             <select
               value={spokenLanguage}
-              onChange={(e) => setSpokenLanguage(e.target.value as "hi" | "en")}
+              onChange={(e) => setSpokenLanguage(e.target.value as "mix" | "hi" | "en")}
               className="rounded-md border border-white/10 bg-white/5 px-1.5 py-1 text-[11px] text-white outline-none"
             >
-              <option value="hi" className="text-black">Hindi</option>
-              <option value="en" className="text-black">English</option>
+              <option value="mix" className="text-black">Hindi + English mix (Hinglish)</option>
+              <option value="hi" className="text-black">Hindi only</option>
+              <option value="en" className="text-black">English only</option>
             </select>
           </label>
         )}
       </div>
-      {resourceType === "video" && <p className="mt-1 text-[11px] text-white/30">Max 3 GB per video.</p>}
+      <p className="mt-1 text-[11px] text-white/30">
+        {resourceType === "video" ? "Max 2 GB per video (720p recommended for long lectures)." : "Max 20 MB per file."}
+      </p>
       {subtitleNote && <p className="mt-1.5 text-[11px] text-white/50">{subtitleNote}</p>}
       {error && <p className="mt-1.5 text-xs text-red-600">{error}</p>}
     </div>

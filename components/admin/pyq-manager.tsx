@@ -164,7 +164,7 @@ export function PyqManager({ kind }: { kind: Kind }) {
             </div>
           </Field>
           {isSolution && (
-            <Field label="Solution video (optional, up to 3 GB)">
+            <Field label="Solution video (optional, up to 2 GB)">
               <div className="flex items-center gap-3">
                 <CloudinaryUploader
                   resourceType="video"
