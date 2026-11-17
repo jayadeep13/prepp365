@@ -6,7 +6,7 @@ import { CourseModel } from "@/models/Course";
 import { ProgressModel } from "@/models/Progress";
 import { getSession } from "@/lib/auth/session";
 import { hasPurchased } from "@/lib/auth/has-purchased";
-import { signedVideoUrl } from "@/lib/cloudinary";
+import { playableVideoUrl, deliveryTypeOf } from "@/lib/cloudinary";
 import { VideoPlayer } from "@/components/learn/video-player";
 import { PdfViewer } from "@/components/learn/pdf-viewer";
 import { cn, slugCandidates } from "@/lib/utils";
@@ -109,11 +109,11 @@ export default async function LearnPage({
             ) : lesson.type === "video" ? (
               lesson.videoUrl ? (
                 <VideoPlayer
-                  src={(lesson.videoPublicId && signedVideoUrl(lesson.videoPublicId)) || lesson.videoUrl}
+                  src={playableVideoUrl(lesson.videoUrl, lesson.videoPublicId)}
                   courseId={course._id.toString()}
                   lessonId={lesson._id.toString()}
                   publicId={lesson.videoPublicId}
-                  deliveryType={lesson.videoUrl.includes("/authenticated/") ? "authenticated" : "upload"}
+                  deliveryType={deliveryTypeOf(lesson.videoUrl)}
                   initialPositionSeconds={progress?.positionSeconds ?? 0}
                 />
               ) : (

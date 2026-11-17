@@ -4,7 +4,7 @@ import { Lock } from "lucide-react";
 import { getPyq } from "@/lib/db/pyqs";
 import { getSession } from "@/lib/auth/session";
 import { hasMockTestAccess } from "@/lib/auth/has-mocktest-access";
-import { signedVideoUrl } from "@/lib/cloudinary";
+import { playableVideoUrl, deliveryTypeOf } from "@/lib/cloudinary";
 import { VideoPlayer } from "@/components/learn/video-player";
 import { PdfViewer } from "@/components/learn/pdf-viewer";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,7 @@ export default async function PyqSolutionPage({ params }: { params: Promise<{ id
 
   const videoSrc =
     hasAccess && item.videoUrl
-      ? (item.videoRestricted && item.videoPublicId && signedVideoUrl(item.videoPublicId)) || item.videoUrl
+      ? playableVideoUrl(item.videoUrl, item.videoPublicId)
       : null;
 
   return (
@@ -72,7 +72,7 @@ export default async function PyqSolutionPage({ params }: { params: Promise<{ id
               <VideoPlayer
                 src={videoSrc}
                 publicId={item.videoPublicId}
-                deliveryType={item.videoRestricted ? "authenticated" : "upload"}
+                deliveryType={deliveryTypeOf(item.videoUrl)}
               />
             </section>
           )}

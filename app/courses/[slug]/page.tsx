@@ -11,6 +11,7 @@ import { getPublishedTestimonials } from "@/lib/db/public-testimonials";
 import { CheckoutButton } from "@/components/checkout-button";
 import { CourseCard } from "@/components/course-card";
 import { formatINR, slugCandidates } from "@/lib/utils";
+import { playableVideoUrl, deliveryTypeOf } from "@/lib/cloudinary";
 import { connectDB } from "@/lib/db/connect";
 import { CourseModel } from "@/models/Course";
 import "@/models/Category";
@@ -42,6 +43,7 @@ type RawCurriculumLesson = {
   duration?: string;
   isFreePreview?: boolean;
   videoUrl?: string;
+  videoPublicId?: string;
   pdfUrl?: string;
 };
 type RawCurriculumChapter = { _id: string; title: string; lessons: RawCurriculumLesson[] };
@@ -100,15 +102,20 @@ export default async function CourseDetailsPage({ params }: { params: Promise<{ 
   const sanitizedCurriculum: CurriculumChapter[] = (course.curriculum ?? []).map((ch) => ({
     _id: ch._id,
     title: ch.title,
-    lessons: ch.lessons.map((l) => ({
-      _id: l._id,
-      title: l.title,
-      type: l.type,
-      duration: l.duration,
-      isFreePreview: l.isFreePreview,
-      videoUrl: l.isFreePreview || isPurchased ? l.videoUrl : undefined,
-      pdfUrl: l.isFreePreview || isPurchased ? l.pdfUrl : undefined,
-    })),
+    lessons: ch.lessons.map((l) => {
+      const unlocked = Boolean(l.isFreePreview || isPurchased);
+      return {
+        _id: l._id,
+        title: l.title,
+        type: l.type,
+        duration: l.duration,
+        isFreePreview: l.isFreePreview,
+        videoUrl: unlocked && l.videoUrl ? playableVideoUrl(l.videoUrl, l.videoPublicId) : undefined,
+        videoPublicId: unlocked ? l.videoPublicId : undefined,
+        videoDeliveryType: deliveryTypeOf(l.videoUrl),
+        pdfUrl: unlocked ? l.pdfUrl : undefined,
+      };
+    }),
   }));
   // Only hand the file URL to the client for materials the viewer is actually allowed to open.
   const sanitizedMaterials = (course.materials ?? []).map((m) => ({

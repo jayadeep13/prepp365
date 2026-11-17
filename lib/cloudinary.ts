@@ -24,6 +24,24 @@ export function signedVideoUrl(publicId: string): string | null {
   });
 }
 
+/** Delivery type actually used by a stored Cloudinary URL (…/video/authenticated/… vs …/video/upload/…). */
+export function deliveryTypeOf(url: string | null | undefined): "authenticated" | "upload" {
+  return url?.includes("/authenticated/") ? "authenticated" : "upload";
+}
+
+/**
+ * A URL the browser can actually play. Only "authenticated" assets need a
+ * signed URL — signing a normal "upload" asset as authenticated 404s (the
+ * upload widget doesn't honour the requested delivery type, so most videos
+ * are plain "upload" assets).
+ */
+export function playableVideoUrl(videoUrl: string, publicId?: string | null): string {
+  if (deliveryTypeOf(videoUrl) === "authenticated" && publicId) {
+    return signedVideoUrl(publicId) ?? videoUrl;
+  }
+  return videoUrl;
+}
+
 function configured() {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
   const apiKey = process.env.CLOUDINARY_API_KEY;

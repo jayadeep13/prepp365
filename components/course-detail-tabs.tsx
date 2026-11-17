@@ -6,7 +6,7 @@ import { PlayCircle, FileText, ClipboardList, Lock, CheckCircle2, Download } fro
 import { cn } from "@/lib/utils";
 import { faqs } from "@/lib/data";
 import { Rating } from "@/components/ui/rating";
-import { NoDownloadVideo } from "@/components/sections/no-download-video";
+import { VideoPlayer } from "@/components/learn/video-player";
 import { PdfViewer } from "@/components/learn/pdf-viewer";
 
 export type CourseMaterial = { _id: string; title: string; fileUrl?: string; isFreePreview?: boolean };
@@ -22,6 +22,9 @@ export type CurriculumLesson = {
   videoUrl?: string;
   /** Same rule as videoUrl — only sent for unlocked PDF lessons. */
   pdfUrl?: string;
+  /** Cloudinary public_id — enables English/Hindi subtitles in the player. */
+  videoPublicId?: string;
+  videoDeliveryType?: "authenticated" | "upload";
 };
 export type CurriculumChapter = { _id: string; title: string; lessons: CurriculumLesson[] };
 
@@ -306,7 +309,12 @@ function CurriculumBrowser({
         {!selected ? null : unlocked ? (
           selected.type === "video" ? (
             selected.videoUrl ? (
-              <NoDownloadVideo src={selected.videoUrl} className="w-full aspect-video rounded-card bg-ink" />
+              <VideoPlayer
+                key={selected._id}
+                src={selected.videoUrl}
+                publicId={selected.videoPublicId}
+                deliveryType={selected.videoDeliveryType ?? "upload"}
+              />
             ) : (
               <EmptyPanel icon={PlayCircle} text="No video has been added to this lesson yet." />
             )

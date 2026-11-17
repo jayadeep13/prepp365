@@ -76,13 +76,18 @@ export function CloudinaryUploader({
   const [subtitleNote, setSubtitleNote] = useState<string | null>(null);
   const wantsSubtitles = resourceType === "video" && autoSubtitles !== false;
 
-  async function requestSubtitles(publicId: string) {
+  async function requestSubtitles(publicId: string, secureUrl: string) {
     setSubtitleNote("Generating English & Hindi subtitles in the background…");
     try {
       const res = await fetch("/api/admin/cloudinary/transcribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publicId, restricted, spokenLanguage: spokenLanguage === "en" ? "en" : "hi" }),
+        // The widget doesn't always honour the requested delivery type — use what Cloudinary actually stored.
+        body: JSON.stringify({
+          publicId,
+          restricted: secureUrl.includes("/authenticated/"),
+          spokenLanguage: spokenLanguage === "en" ? "en" : "hi",
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Subtitle request failed");
@@ -137,7 +142,7 @@ export function CloudinaryUploader({
           if (result?.event === "success" && result.info) {
             onUploaded({ secureUrl: result.info.secure_url, publicId: result.info.public_id });
             setStatus("done");
-            if (wantsSubtitles) requestSubtitles(result.info.public_id);
+            if (wantsSubtitles) requestSubtitles(result.info.public_id, result.info.secure_url);
           }
         }
       );
