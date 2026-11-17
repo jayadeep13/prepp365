@@ -1,4 +1,5 @@
 import { listPyqs } from "@/lib/db/pyqs";
+import { PyqHero } from "@/components/pyq/pyq-hero";
 import { PyqList } from "@/components/pyq/pyq-list";
 
 export const dynamic = "force-dynamic";
@@ -13,14 +14,9 @@ export default async function PyqSolutionsPage({ searchParams }: { searchParams:
   const items = await listPyqs("solution");
 
   return (
-    <div className="container-page py-10">
-      <p className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-purple-500 mb-2">Solved papers</p>
-      <h1 className="font-display text-3xl sm:text-4xl font-bold text-ink">PYQs with Solution</h1>
-      <p className="mt-2 text-ink-soft max-w-lg">
-        Previous year papers solved by our faculty — detailed solution PDFs and video explanations with English &amp;
-        Hindi subtitles and adjustable playback speed.
-      </p>
-      <PyqList items={items} basePath="/pyq-solutions" activeExam={exam} emptyText="No solved papers published yet" />
+    <div>
+      <PyqHero variant="solution" items={items} />
+      <PyqList items={items} basePath="/pyq-solutions" activeExam={exam} emptyText="Solved papers are on their way" />
     </div>
   );
 }

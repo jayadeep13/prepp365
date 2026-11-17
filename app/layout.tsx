@@ -56,6 +56,11 @@ const playfair = Playfair_Display({
   weight: ["600", "700", "800"],
 });
 
+// The header's category menu (names + course counts) is rendered here. Without
+// this, statically built pages like /courses keep the categories from deploy time,
+// so new categories/courses wouldn't show in the menu until the next deploy.
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "Prepp365 — NTA UGC NET Paper 1",
   description:

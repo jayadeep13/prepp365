@@ -16,6 +16,12 @@ function CoursesContent() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [selected, setSelected] = useState<string[]>(initial ? [initial] : []);
+
+  // Picking a category from the header menu while already on /courses only changes
+  // the query string — keep the filter in sync with it.
+  useEffect(() => {
+    setSelected(initial ? [initial] : []);
+  }, [initial]);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"popular" | "priceLow" | "priceHigh" | "rating">("popular");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -41,6 +47,15 @@ function CoursesContent() {
 
   const groups = useMemo(() => Array.from(new Set(categories.map((c) => c.group))), [categories]);
   const compact = !loading && courses.length <= 3;
+  const selectedNames = selected.map((s) => categories.find((c) => c.slug === s)?.name ?? s);
+  const heading = selected.length === 1 ? `${selectedNames[0]} courses` : "All courses";
+
+  function clearFilters() {
+    setSelected([]);
+    setSearch("");
+    // Drop ?category= from the URL too, so a refresh doesn't bring the filter back.
+    window.history.replaceState(null, "", "/courses");
+  }
 
   const toggle = (slug: string) => {
     setSelected((prev) => (prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]));
@@ -68,10 +83,23 @@ function CoursesContent() {
         <p className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-purple-500 mb-2">
           Course catalogue
         </p>
-        <h1 className="font-display text-3xl sm:text-4xl font-bold text-ink">All courses</h1>
+        <h1 className="font-display text-3xl sm:text-4xl font-bold text-ink">{heading}</h1>
         <p className="mt-2 text-ink-soft">
           {loading ? "Loading…" : compact ? `${filtered.length} course${filtered.length === 1 ? "" : "s"} available` : `${filtered.length} batches matching your filters`}
         </p>
+        {/* With few courses the sidebar is hidden — still show the active filter and a way out. */}
+        {compact && selected.length > 0 && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {selectedNames.map((n) => (
+              <span key={n} className="rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">
+                {n}
+              </span>
+            ))}
+            <button onClick={clearFilters} className="flex items-center gap-1 text-sm font-semibold text-purple-600">
+              <X size={14} /> Show all courses
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
@@ -117,7 +145,7 @@ function CoursesContent() {
 
               {selected.length > 0 && (
                 <button
-                  onClick={() => setSelected([])}
+                  onClick={clearFilters}
                   className="flex items-center gap-1.5 text-sm font-semibold text-purple-600"
                 >
                   <X size={14} /> Clear filters
@@ -172,9 +200,28 @@ function CoursesContent() {
               </button>
             </div>
           ) : !loading && filtered.length === 0 ? (
-            <div className="rounded-card border border-dashed border-surface-line py-20 text-center">
-              <p className="font-display font-semibold text-ink">No courses match those filters</p>
-              <p className="text-sm text-ink-faint mt-1">Try clearing a filter or searching a different exam.</p>
+            <div className="rounded-card border border-dashed border-surface-line py-20 text-center px-6">
+              {selected.length === 1 && !search ? (
+                <>
+                  <p className="font-display font-semibold text-ink">{selectedNames[0]} courses are coming soon</p>
+                  <p className="text-sm text-ink-faint mt-1">
+                    New batches for this exam will appear here as soon as they're published.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-display font-semibold text-ink">No courses match those filters</p>
+                  <p className="text-sm text-ink-faint mt-1">Try clearing a filter or searching a different exam.</p>
+                </>
+              )}
+              {courses.length > 0 && (
+                <button
+                  onClick={clearFilters}
+                  className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-brand-gradient px-6 py-2.5 text-sm font-semibold text-white shadow-glass"
+                >
+                  View all {courses.length} course{courses.length === 1 ? "" : "s"}
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">

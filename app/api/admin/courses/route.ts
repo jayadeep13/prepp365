@@ -53,6 +53,7 @@ const bodySchema = z
     mrp: z.coerce.number().nonnegative("can't be negative"),
     duration: z.string().optional(),
     language: z.string().optional(),
+    isPublished: z.boolean().optional().default(false),
   })
   .refine((data) => data.mrp === 0 || data.mrp >= data.price, {
     message: "can't be lower than the price",
@@ -103,7 +104,7 @@ export async function POST(req: NextRequest) {
       mrp: parsed.mrp || parsed.price,
       duration: parsed.duration,
       language: parsed.language,
-      isPublished: false,
+      isPublished: parsed.isPublished,
     });
 
     return NextResponse.json({ course });

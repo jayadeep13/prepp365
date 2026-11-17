@@ -32,6 +32,8 @@ const emptyForm = {
   mrp: 0,
   duration: "",
   language: "",
+  // New courses go live on the website straight away unless the admin unticks this.
+  isPublished: true,
 };
 
 export default function AdminCoursesPage() {
@@ -211,7 +213,24 @@ export default function AdminCoursesPage() {
             <textarea required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={inputClass} rows={3} />
           </Field>
           <div className="sm:col-span-2">
-            <Button type="submit" disabled={saving}>{saving ? "Creating…" : "Create course (unpublished)"}</Button>
+            <label className="mb-4 flex items-start gap-2.5 text-sm text-white/70">
+              <input
+                type="checkbox"
+                checked={form.isPublished}
+                onChange={(e) => setForm({ ...form, isPublished: e.target.checked })}
+                className="mt-0.5 h-4 w-4"
+              />
+              <span>
+                <span className="font-semibold text-white">Publish on the website now</span>
+                <span className="block text-xs text-white/40">
+                  Students see it in All courses and its category straight away. Untick to save it as a draft and publish
+                  later from the list below.
+                </span>
+              </span>
+            </label>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Creating…" : form.isPublished ? "Create & publish course" : "Create as draft"}
+            </Button>
           </div>
         </form>
       )}
