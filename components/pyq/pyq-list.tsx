@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { FileText, PlayCircle, Download, Lock, ArrowRight, Languages, Inbox, ClipboardList, BookOpen } from "lucide-react";
 import type { PublicPyq } from "@/lib/db/pyqs";
-import { downloadUrl } from "@/components/learn/pdf-viewer";
-import { cn } from "@/lib/utils";
+import { cn, downloadUrl } from "@/lib/utils";
 
 /** Exam filter chips + card grid shared by the PYQ and PYQs-with-Solution pages. */
 export function PyqList({

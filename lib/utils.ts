@@ -35,3 +35,16 @@ export function slugCandidates(raw: string): string[] {
   }
   return Array.from(new Set([raw, decoded, slugify(decoded)].filter(Boolean)));
 }
+
+/**
+ * Link that makes the browser save a Cloudinary file instead of opening it.
+ * Browsers ignore the `download` attribute on cross-origin links, so ask
+ * Cloudinary to send it as an attachment via `fl_attachment`.
+ * Lives here (not in a "use client" file) so server components can call it too.
+ */
+export function downloadUrl(src: string): string {
+  if (src.includes("res.cloudinary.com") && src.includes("/upload/") && !src.includes("fl_attachment")) {
+    return src.replace("/upload/", "/upload/fl_attachment/");
+  }
+  return src;
+}

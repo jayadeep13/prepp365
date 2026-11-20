@@ -1,17 +1,7 @@
 "use client";
 
 import { Lock, Download, ExternalLink } from "lucide-react";
-
-/**
- * Browsers ignore the `download` attribute on cross-origin links (Cloudinary),
- * so ask Cloudinary itself to send the file as an attachment via `fl_attachment`.
- */
-export function downloadUrl(src: string): string {
-  if (src.includes("res.cloudinary.com") && src.includes("/upload/") && !src.includes("fl_attachment")) {
-    return src.replace("/upload/", "/upload/fl_attachment/");
-  }
-  return src;
-}
+import { downloadUrl } from "@/lib/utils";
 
 export function PdfViewer({
   src,
